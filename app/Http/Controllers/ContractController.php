@@ -1,0 +1,246 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Contract;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+
+class ContractController extends Controller
+{
+    public function index()
+    {
+        $contracts = Contract::latest()->paginate(15);
+
+        return view('contracts.index', compact('contracts'));
+    }
+
+    public function create()
+    {
+        return view('contracts.form', [
+            'contract' => new Contract(),
+            'isEdit' => false,
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'contract_number'    => ['required', 'string', 'max:100', 'unique:contracts,contract_number'],
+            'buyer_name'         => ['nullable', 'string', 'max:150'],
+            'rfq_from_buyer'     => ['nullable', 'date'],
+            'quotation_to_buyer' => ['nullable', 'date'],
+            'contract_date'      => ['nullable', 'date'],
+        ]);
+
+        $contract = Contract::create($data);
+
+        // Contract Payment Terms
+        foreach ($request->input('contract_payment_terms', []) as $item) {
+            $contract->contractPaymentTerms()->create([
+                'term_code'      => $item['term_code'] ?? null,
+                'percentage'     => ($item['percentage'] ?? '') !== '' ? $item['percentage'] : null,
+                'invoice_number' => $item['invoice_number'] ?? null,
+                'invoice_date'   => ($item['invoice_date'] ?? '') ?: null,
+                'paid_date'      => ($item['paid_date'] ?? '') ?: null,
+            ]);
+        }
+
+        // RFQs
+        foreach ($request->input('rfqs', []) as $item) {
+            if (empty($item['rfq_number'])) continue;
+            $contract->rfqs()->create([
+                'rfq_number' => $item['rfq_number'],
+                'rfq_date'   => ($item['rfq_date'] ?? '') ?: null,
+                'maker'      => $item['maker'] ?? null,
+            ]);
+        }
+
+        // Quotations
+        foreach ($request->input('quotations', []) as $item) {
+            if (empty($item['quotation_number'])) continue;
+            $contract->quotations()->create([
+                'quotation_number' => $item['quotation_number'],
+                'quotation_date'   => ($item['quotation_date'] ?? '') ?: null,
+            ]);
+        }
+
+        // Purchase Orders + their Maker Payment Terms
+        foreach ($request->input('purchase_orders', []) as $item) {
+            if (empty($item['po_number'])) continue;
+            $po = $contract->purchaseOrders()->create([
+                'po_number'           => $item['po_number'],
+                'po_date'             => ($item['po_date'] ?? '') ?: null,
+                'po_payment_term'     => $item['po_payment_term'] ?? null,
+                'wip_status'          => $item['wip_status'] ?? null,
+                'exact_delivery_date' => ($item['exact_delivery_date'] ?? '') ?: null,
+                'dimension'           => $item['dimension'] ?? null,
+                'weight'              => $item['weight'] ?? null,
+                'shipping_documents'  => $item['shipping_documents'] ?? null,
+                'incoterm'            => $item['incoterm'] ?? null,
+            ]);
+            foreach ($item['maker_payment_terms'] ?? [] as $mpt) {
+                $po->makerPaymentTerms()->create([
+                    'term_code'      => $mpt['term_code'] ?? null,
+                    'percentage'     => ($mpt['percentage'] ?? '') !== '' ? $mpt['percentage'] : null,
+                    'invoice_number' => $mpt['invoice_number'] ?? null,
+                    'invoice_date'   => ($mpt['invoice_date'] ?? '') ?: null,
+                    'paid_date'      => ($mpt['paid_date'] ?? '') ?: null,
+                ]);
+            }
+        }
+
+        return redirect()->route('contracts.show', $contract)->with('success', 'Contract berhasil dibuat.');
+    }
+
+    public function show(Contract $contract)
+    {
+        $contract->load([
+            'rfqs',
+            'quotations',
+            'purchaseOrders.makerPaymentTerms',
+            'contractPaymentTerms',
+        ]);
+
+        return view('contracts.show', compact('contract'));
+    }
+
+    public function edit(Contract $contract)
+    {
+        $contract->load(['rfqs', 'quotations', 'purchaseOrders.makerPaymentTerms', 'contractPaymentTerms']);
+
+        return view('contracts.form', [
+            'contract' => $contract,
+            'isEdit'   => true,
+        ]);
+    }
+
+    public function update(Request $request, Contract $contract)
+    {
+        $data = $request->validate([
+            'contract_number'    => ['required', 'string', 'max:100', Rule::unique('contracts', 'contract_number')->ignore($contract->id)],
+            'buyer_name'         => ['nullable', 'string', 'max:150'],
+            'rfq_from_buyer'     => ['nullable', 'date'],
+            'quotation_to_buyer' => ['nullable', 'date'],
+            'contract_date'      => ['nullable', 'date'],
+        ]);
+
+        $contract->update($data);
+
+        // ── Contract Payment Terms (sync) ────────────────────────────────
+        $submittedCptIds = [];
+        foreach ($request->input('contract_payment_terms', []) as $item) {
+            $id   = $item['id'] ?? null;
+            $cptData = [
+                'term_code'      => $item['term_code'] ?? null,
+                'percentage'     => ($item['percentage'] ?? '') !== '' ? $item['percentage'] : null,
+                'invoice_number' => $item['invoice_number'] ?? null,
+                'invoice_date'   => ($item['invoice_date'] ?? '') ?: null,
+                'paid_date'      => ($item['paid_date'] ?? '') ?: null,
+            ];
+            if ($id) {
+                $contract->contractPaymentTerms()->where('id', $id)->update($cptData);
+                $submittedCptIds[] = (int) $id;
+            } else {
+                $new = $contract->contractPaymentTerms()->create($cptData);
+                $submittedCptIds[] = $new->id;
+            }
+        }
+        $contract->contractPaymentTerms()->whereNotIn('id', $submittedCptIds ?: [0])->delete();
+
+        // ── RFQs (sync) ──────────────────────────────────────────────────
+        $submittedRfqIds = [];
+        foreach ($request->input('rfqs', []) as $item) {
+            $id = $item['id'] ?? null;
+            if (!$id && empty($item['rfq_number'])) continue;
+            $rfqData = [
+                'rfq_number' => $item['rfq_number'],
+                'rfq_date'   => ($item['rfq_date'] ?? '') ?: null,
+                'maker'      => $item['maker'] ?? null,
+            ];
+            if ($id) {
+                $contract->rfqs()->where('id', $id)->update($rfqData);
+                $submittedRfqIds[] = (int) $id;
+            } else {
+                $new = $contract->rfqs()->create($rfqData);
+                $submittedRfqIds[] = $new->id;
+            }
+        }
+        $contract->rfqs()->whereNotIn('id', $submittedRfqIds ?: [0])->delete();
+
+        // ── Quotations (sync) ────────────────────────────────────────────
+        $submittedQuoIds = [];
+        foreach ($request->input('quotations', []) as $item) {
+            $id = $item['id'] ?? null;
+            if (!$id && empty($item['quotation_number'])) continue;
+            $quoData = [
+                'quotation_number' => $item['quotation_number'],
+                'quotation_date'   => ($item['quotation_date'] ?? '') ?: null,
+            ];
+            if ($id) {
+                $contract->quotations()->where('id', $id)->update($quoData);
+                $submittedQuoIds[] = (int) $id;
+            } else {
+                $new = $contract->quotations()->create($quoData);
+                $submittedQuoIds[] = $new->id;
+            }
+        }
+        $contract->quotations()->whereNotIn('id', $submittedQuoIds ?: [0])->delete();
+
+        // ── Purchase Orders + Maker Payment Terms (sync) ─────────────────
+        $submittedPoIds = [];
+        foreach ($request->input('purchase_orders', []) as $item) {
+            $id = $item['id'] ?? null;
+            if (!$id && empty($item['po_number'])) continue;
+            $poData = [
+                'po_number'           => $item['po_number'],
+                'po_date'             => ($item['po_date'] ?? '') ?: null,
+                'po_payment_term'     => $item['po_payment_term'] ?? null,
+                'wip_status'          => $item['wip_status'] ?? null,
+                'exact_delivery_date' => ($item['exact_delivery_date'] ?? '') ?: null,
+                'dimension'           => $item['dimension'] ?? null,
+                'weight'              => $item['weight'] ?? null,
+                'shipping_documents'  => $item['shipping_documents'] ?? null,
+                'incoterm'            => $item['incoterm'] ?? null,
+            ];
+            if ($id) {
+                $contract->purchaseOrders()->where('id', $id)->update($poData);
+                $po = $contract->purchaseOrders()->where('id', $id)->first();
+                $submittedPoIds[] = (int) $id;
+            } else {
+                $po = $contract->purchaseOrders()->create($poData);
+                $submittedPoIds[] = $po->id;
+            }
+            // Upsert MPTs for this PO
+            $submittedMptIds = [];
+            foreach ($item['maker_payment_terms'] ?? [] as $mpt) {
+                $mptId   = $mpt['id'] ?? null;
+                $mptData = [
+                    'term_code'      => $mpt['term_code'] ?? null,
+                    'percentage'     => ($mpt['percentage'] ?? '') !== '' ? $mpt['percentage'] : null,
+                    'invoice_number' => $mpt['invoice_number'] ?? null,
+                    'invoice_date'   => ($mpt['invoice_date'] ?? '') ?: null,
+                    'paid_date'      => ($mpt['paid_date'] ?? '') ?: null,
+                ];
+                if ($mptId) {
+                    $po->makerPaymentTerms()->where('id', $mptId)->update($mptData);
+                    $submittedMptIds[] = (int) $mptId;
+                } else {
+                    $new = $po->makerPaymentTerms()->create($mptData);
+                    $submittedMptIds[] = $new->id;
+                }
+            }
+            $po->makerPaymentTerms()->whereNotIn('id', $submittedMptIds ?: [0])->delete();
+        }
+        $contract->purchaseOrders()->whereNotIn('id', $submittedPoIds ?: [0])->delete();
+
+        return redirect()->route('contracts.show', $contract)->with('success', 'Contract berhasil diperbarui.');
+    }
+
+    public function destroy(Contract $contract)
+    {
+        $contract->delete();
+
+        return redirect()->route('contracts.index')->with('success', 'Contract berhasil dihapus.');
+    }
+}
