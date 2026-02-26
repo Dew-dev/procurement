@@ -4,24 +4,26 @@
 
 @section('content')
 @php
-    $inp     = 'border border-slate-200 rounded px-2 py-1.5 text-sm w-full focus:outline-none focus:border-indigo-400 bg-white';
-    $btnAdd  = 'px-3 py-1.5 text-sm rounded-md font-medium bg-emerald-600 text-white hover:bg-emerald-700';
-    $btnDel  = 'w-7 h-7 flex items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-200 text-sm font-bold leading-none flex-shrink-0 mt-1';
-    $th      = 'px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wide whitespace-nowrap';
-    $td      = 'px-3 py-2 align-top';
-    $section = 'bg-white border border-slate-200 rounded-xl overflow-hidden mb-6';
-    $secHead = 'px-5 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between';
-    $existingCpts = $isEdit ? $contract->contractPaymentTerms : collect();
-    $existingRfqs = $isEdit ? $contract->rfqs : collect();
-    $existingQuos = $isEdit ? $contract->quotations : collect();
-    $existingPos  = $isEdit ? $contract->purchaseOrders : collect();
+$inp = 'border border-slate-200 rounded px-2 py-1.5 text-sm w-full focus:outline-none focus:border-indigo-400 bg-white';
+$btnAdd = 'px-3 py-1.5 text-sm rounded-md font-medium bg-emerald-600 text-white hover:bg-emerald-700';
+$btnDel = 'w-7 h-7 flex items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-200 text-sm font-bold leading-none flex-shrink-0 mt-1';
+$th = 'px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wide whitespace-nowrap';
+$td = 'px-3 py-2 align-top';
+$section = 'bg-white border border-slate-200 rounded-xl overflow-hidden mb-6';
+$secHead = 'px-5 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between';
+$existingCpts = $isEdit ? $contract->contractPaymentTerms : collect();
+$existingRfqs = $isEdit ? $contract->rfqs : collect();
+$existingQuos = $isEdit ? $contract->quotations : collect();
+$existingPos = $isEdit ? $contract->purchaseOrders : collect();
+$existingBgs = $isEdit ? $contract->bgNumbers : collect();
+$existingSbs = $isEdit ? $contract->suretyBonds : collect();
 @endphp
 
 <h1 class="text-2xl font-semibold mb-6">{{ $isEdit ? 'Edit Contract' : 'Tambah Contract' }}</h1>
 
 <form method="POST"
-      action="{{ $isEdit ? route('contracts.update', $contract) : route('contracts.store') }}"
-      class="space-y-6">
+    action="{{ $isEdit ? route('contracts.update', $contract) : route('contracts.store') }}"
+    class="space-y-6">
     @csrf
     @if($isEdit) @method('PUT') @endif
 
@@ -41,7 +43,7 @@
                     <input class="{{ $inp }}" name="buyer_name" value="{{ old('buyer_name', $contract->buyer_name) }}" placeholder="PT. Example">
                 </div>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-sm font-medium mb-1">RFQ From Buyer</label>
                     <input class="{{ $inp }}" type="date" name="rfq_from_buyer" value="{{ old('rfq_from_buyer', optional($contract->rfq_from_buyer)->format('Y-m-d')) }}">
@@ -53,6 +55,10 @@
                 <div>
                     <label class="block text-sm font-medium mb-1">Contract Date</label>
                     <input class="{{ $inp }}" type="date" name="contract_date" value="{{ old('contract_date', optional($contract->contract_date)->format('Y-m-d')) }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Delivery Date</label>
+                    <input class="{{ $inp }}" type="date" name="delivery_date" value="{{ old('delivery_date', optional($contract->delivery_date)->format('Y-m-d')) }}">
                 </div>
             </div>
         </div>
@@ -90,7 +96,7 @@
                         <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'cpt-tbody','cpt-empty-msg')" class="{{ $btnDel }}">×</button></td>
                     </tr>
                     @endforeach
-                    <tr class="border-b border-slate-50" id="cpt-empty-msg"{{ $existingCpts->isNotEmpty() ? ' style="display:none"' : '' }}>
+                    <tr class="border-b border-slate-50" id="cpt-empty-msg" {{ $existingCpts->isNotEmpty() ? ' style="display:none"' : '' }}>
                         <td colspan="6" class="px-3 py-3 text-center text-slate-400 text-sm italic">Klik "+ Tambah" untuk menambah baris</td>
                     </tr>
                 </tbody>
@@ -105,6 +111,100 @@
             <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="contract_payment_terms[__IDX__][invoice_date]"></td>
             <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="contract_payment_terms[__IDX__][paid_date]"></td>
             <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'cpt-tbody','cpt-empty-msg')" class="{{ $btnDel }}">×</button></td>
+        </tr>
+    </template>
+
+    {{-- BG NUMBERS --}}
+    <div class="{{ $section }}">
+        <div class="{{ $secHead }}">
+            <h2 class="font-semibold text-slate-800">BG Number</h2>
+            <button type="button" onclick="addRow('bg-tbody','bg-tpl',ctrs,'bg')" class="{{ $btnAdd }}">+ Tambah</button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="border-b border-slate-100">
+                    <tr>
+                        <th class="{{ $th }}">Number</th>
+                        <th class="{{ $th }}">Periode</th>
+                        <th class="{{ $th }}">Start Date</th>
+                        <th class="{{ $th }}">End Date</th>
+                        <th class="w-10"></th>
+                    </tr>
+                </thead>
+                <tbody id="bg-tbody">
+                    @foreach($existingBgs as $i => $bg)
+                    <tr class="border-b border-slate-50 hover:bg-slate-50">
+                        <td class="{{ $td }}">
+                            <input type="hidden" name="bg_numbers[{{ $i }}][id]" value="{{ $bg->id }}">
+                            <input class="{{ $inp }}" type="text" name="bg_numbers[{{ $i }}][number]" value="{{ $bg->number }}" placeholder="No. BG">
+                        </td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="bg_numbers[{{ $i }}][periode]" value="{{ $bg->periode }}" placeholder="misal: 12 bulan"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="bg_numbers[{{ $i }}][start_date]" value="{{ optional($bg->start_date)->format('Y-m-d') }}"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="bg_numbers[{{ $i }}][end_date]" value="{{ optional($bg->end_date)->format('Y-m-d') }}"></td>
+                        <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'bg-tbody','bg-empty-msg')" class="{{ $btnDel }}">×</button></td>
+                    </tr>
+                    @endforeach
+                    <tr class="border-b border-slate-50" id="bg-empty-msg" {{ $existingBgs->isNotEmpty() ? ' style="display:none"' : '' }}>
+                        <td colspan="5" class="px-3 py-3 text-center text-slate-400 text-sm italic">Klik "+ Tambah" untuk menambah baris</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <template id="bg-tpl">
+        <tr class="border-b border-slate-50 hover:bg-slate-50">
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="bg_numbers[__IDX__][number]" placeholder="No. BG"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="bg_numbers[__IDX__][periode]" placeholder="misal: 12 bulan"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="bg_numbers[__IDX__][start_date]"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="bg_numbers[__IDX__][end_date]"></td>
+            <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'bg-tbody','bg-empty-msg')" class="{{ $btnDel }}">×</button></td>
+        </tr>
+    </template>
+
+    {{-- SURETY BONDS --}}
+    <div class="{{ $section }}">
+        <div class="{{ $secHead }}">
+            <h2 class="font-semibold text-slate-800">Surety Bond</h2>
+            <button type="button" onclick="addRow('sb-tbody','sb-tpl',ctrs,'sb')" class="{{ $btnAdd }}">+ Tambah</button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="border-b border-slate-100">
+                    <tr>
+                        <th class="{{ $th }}">Number</th>
+                        <th class="{{ $th }}">Periode</th>
+                        <th class="{{ $th }}">Start Date</th>
+                        <th class="{{ $th }}">End Date</th>
+                        <th class="w-10"></th>
+                    </tr>
+                </thead>
+                <tbody id="sb-tbody">
+                    @foreach($existingSbs as $i => $sb)
+                    <tr class="border-b border-slate-50 hover:bg-slate-50">
+                        <td class="{{ $td }}">
+                            <input type="hidden" name="surety_bonds[{{ $i }}][id]" value="{{ $sb->id }}">
+                            <input class="{{ $inp }}" type="text" name="surety_bonds[{{ $i }}][number]" value="{{ $sb->number }}" placeholder="No. Surety Bond">
+                        </td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="surety_bonds[{{ $i }}][periode]" value="{{ $sb->periode }}" placeholder="misal: 12 bulan"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="surety_bonds[{{ $i }}][start_date]" value="{{ optional($sb->start_date)->format('Y-m-d') }}"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="surety_bonds[{{ $i }}][end_date]" value="{{ optional($sb->end_date)->format('Y-m-d') }}"></td>
+                        <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'sb-tbody','sb-empty-msg')" class="{{ $btnDel }}">×</button></td>
+                    </tr>
+                    @endforeach
+                    <tr class="border-b border-slate-50" id="sb-empty-msg" {{ $existingSbs->isNotEmpty() ? ' style="display:none"' : '' }}>
+                        <td colspan="5" class="px-3 py-3 text-center text-slate-400 text-sm italic">Klik "+ Tambah" untuk menambah baris</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <template id="sb-tpl">
+        <tr class="border-b border-slate-50 hover:bg-slate-50">
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="surety_bonds[__IDX__][number]" placeholder="No. Surety Bond"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="surety_bonds[__IDX__][periode]" placeholder="misal: 12 bulan"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="surety_bonds[__IDX__][start_date]"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="surety_bonds[__IDX__][end_date]"></td>
+            <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'sb-tbody','sb-empty-msg')" class="{{ $btnDel }}">×</button></td>
         </tr>
     </template>
 
@@ -136,7 +236,7 @@
                         <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'rfq-tbody','rfq-empty-msg')" class="{{ $btnDel }}">×</button></td>
                     </tr>
                     @endforeach
-                    <tr class="border-b border-slate-50" id="rfq-empty-msg"{{ $existingRfqs->isNotEmpty() ? ' style="display:none"' : '' }}>
+                    <tr class="border-b border-slate-50" id="rfq-empty-msg" {{ $existingRfqs->isNotEmpty() ? ' style="display:none"' : '' }}>
                         <td colspan="4" class="px-3 py-3 text-center text-slate-400 text-sm italic">Klik "+ Tambah" untuk menambah baris</td>
                     </tr>
                 </tbody>
@@ -178,7 +278,7 @@
                         <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'quo-tbody','quo-empty-msg')" class="{{ $btnDel }}">×</button></td>
                     </tr>
                     @endforeach
-                    <tr class="border-b border-slate-50" id="quo-empty-msg"{{ $existingQuos->isNotEmpty() ? ' style="display:none"' : '' }}>
+                    <tr class="border-b border-slate-50" id="quo-empty-msg" {{ $existingQuos->isNotEmpty() ? ' style="display:none"' : '' }}>
                         <td colspan="3" class="px-3 py-3 text-center text-slate-400 text-sm italic">Klik "+ Tambah" untuk menambah baris</td>
                     </tr>
                 </tbody>
@@ -252,7 +352,7 @@
                                 <td class="px-3 py-1.5"><button type="button" onclick="removeMptRow(this)" class="w-6 h-6 flex items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-200 text-xs font-bold">×</button></td>
                             </tr>
                             @endforeach
-                            <tr data-mpt-empty class="border-b border-slate-50"{{ $po->makerPaymentTerms->isNotEmpty() ? ' style="display:none"' : '' }}>
+                            <tr data-mpt-empty class="border-b border-slate-50" {{ $po->makerPaymentTerms->isNotEmpty() ? ' style="display:none"' : '' }}>
                                 <td colspan="6" class="px-3 py-2 text-center text-slate-400 italic">Belum ada terms</td>
                             </tr>
                         </tbody>
@@ -260,7 +360,7 @@
                 </div>
             </div>
             @endforeach
-            <p id="po-empty-msg" class="px-5 py-3 text-center text-slate-400 text-sm italic"{{ $existingPos->isNotEmpty() ? ' style="display:none"' : '' }}>Klik "+ Tambah PO" untuk menambah Purchase Order</p>
+            <p id="po-empty-msg" class="px-5 py-3 text-center text-slate-400 text-sm italic" {{ $existingPos->isNotEmpty() ? ' style="display:none"' : '' }}>Klik "+ Tambah PO" untuk menambah Purchase Order</p>
         </div>
     </div>
 
@@ -323,13 +423,15 @@
         </tr>
     </template>
 
+
+
     {{-- SUBMIT --}}
     <div class="flex gap-3">
         <button class="px-5 py-2 rounded-lg bg-slate-900 text-white hover:bg-slate-700 font-medium" type="submit">
             {{ $isEdit ? 'Simpan Perubahan' : 'Buat Contract' }}
         </button>
         <a href="{{ $isEdit ? route('contracts.show', $contract) : route('contracts.index') }}"
-           class="px-5 py-2 rounded-lg border border-slate-300 hover:bg-slate-50">
+            class="px-5 py-2 rounded-lg border border-slate-300 hover:bg-slate-50">
             Batal
         </a>
     </div>
@@ -338,84 +440,86 @@
 
 @push('scripts')
 <script>
-const ctrs = {
-    cpt: {{ $existingCpts->count() }},
-    rfq: {{ $existingRfqs->count() }},
-    quo: {{ $existingQuos->count() }},
-    po:  {{ $existingPos->count() }},
-};
+    const ctrs = {
+        cpt: {{$existingCpts->count()}},
+        rfq: {{$existingRfqs->count()}},
+        quo: {{$existingQuos->count()}},
+        po: {{$existingPos->count()}},
+        bg: {{$existingBgs->count()}},
+        sb: {{$existingSbs->count()}}
+    };
 
-function addRow(tbodyId, tplId, countersObj, key) {
-    const tbody = document.getElementById(tbodyId);
-    const tpl   = document.getElementById(tplId);
-    // Hide empty message
-    const emptyId = tbodyId.replace('-tbody','-empty-msg');
-    const emptyEl = document.getElementById(emptyId);
-    if (emptyEl) emptyEl.style.display = 'none';
-    // Clone and insert
-    const idx  = countersObj[key]++;
-    const html = tpl.innerHTML.replace(/__IDX__/g, idx);
-    tbody.insertAdjacentHTML('beforeend', html);
-    tbody.lastElementChild?.querySelector('input')?.focus();
-}
-
-function removeSimpleRow(btn, tbodyId, emptyMsgId) {
-    const tr    = btn.closest('tr');
-    const tbody = document.getElementById(tbodyId);
-    tr.remove();
-    if (tbody.querySelectorAll('tr:not(#' + emptyMsgId + ')').length === 0) {
-        const emptyEl = document.getElementById(emptyMsgId);
-        if (emptyEl) emptyEl.style.display = '';
+    function addRow(tbodyId, tplId, countersObj, key) {
+        const tbody = document.getElementById(tbodyId);
+        const tpl = document.getElementById(tplId);
+        // Hide empty message
+        const emptyId = tbodyId.replace('-tbody', '-empty-msg');
+        const emptyEl = document.getElementById(emptyId);
+        if (emptyEl) emptyEl.style.display = 'none';
+        // Clone and insert
+        const idx = countersObj[key]++;
+        const html = tpl.innerHTML.replace(/__IDX__/g, idx);
+        tbody.insertAdjacentHTML('beforeend', html);
+        tbody.lastElementChild?.querySelector('input')?.focus();
     }
-}
 
-function addPoCard() {
-    const container = document.getElementById('po-cards');
-    const tpl       = document.getElementById('po-card-tpl');
-    const emptyMsg  = document.getElementById('po-empty-msg');
-    if (emptyMsg) emptyMsg.style.display = 'none';
-    const poIdx = ctrs.po++;
-    // Replace PO index placeholder
-    let html = tpl.innerHTML.replace(/__PO__/g, poIdx);
-    container.insertAdjacentHTML('beforeend', html);
-    const newCard = container.lastElementChild;
-    // Store po index on this card
-    newCard.dataset.poIdx = poIdx;
-    newCard.querySelector('input:not([type=hidden])')?.focus();
-}
-
-function removePoCard(btn, containerId, emptyMsgId) {
-    const card      = btn.closest('[data-po-card]');
-    const container = document.getElementById(containerId);
-    card.remove();
-    if (container.querySelectorAll('[data-po-card]').length === 0) {
-        const emptyEl = document.getElementById(emptyMsgId);
-        if (emptyEl) emptyEl.style.display = '';
+    function removeSimpleRow(btn, tbodyId, emptyMsgId) {
+        const tr = btn.closest('tr');
+        const tbody = document.getElementById(tbodyId);
+        tr.remove();
+        if (tbody.querySelectorAll('tr:not(#' + emptyMsgId + ')').length === 0) {
+            const emptyEl = document.getElementById(emptyMsgId);
+            if (emptyEl) emptyEl.style.display = '';
+        }
     }
-}
 
-function addMptRow(btn) {
-    const card    = btn.closest('[data-po-card]');
-    const poIdx   = card.dataset.poIdx;
-    const tbody   = card.querySelector('[data-mpt-tbody]');
-    const emptyTr = tbody.querySelector('[data-mpt-empty]');
-    const mptTpl  = document.getElementById('mpt-row-tpl');
-    const mptIdx  = parseInt(tbody.dataset.mptCtr || '0');
-    tbody.dataset.mptCtr = mptIdx + 1;
-    if (emptyTr) emptyTr.style.display = 'none';
-    let html = mptTpl.innerHTML.replace(/__PO__/g, poIdx).replace(/__MPT__/g, mptIdx);
-    tbody.insertAdjacentHTML('beforeend', html);
-    tbody.lastElementChild?.querySelector('input')?.focus();
-}
+    function addPoCard() {
+        const container = document.getElementById('po-cards');
+        const tpl = document.getElementById('po-card-tpl');
+        const emptyMsg = document.getElementById('po-empty-msg');
+        if (emptyMsg) emptyMsg.style.display = 'none';
+        const poIdx = ctrs.po++;
+        // Replace PO index placeholder
+        let html = tpl.innerHTML.replace(/__PO__/g, poIdx);
+        container.insertAdjacentHTML('beforeend', html);
+        const newCard = container.lastElementChild;
+        // Store po index on this card
+        newCard.dataset.poIdx = poIdx;
+        newCard.querySelector('input:not([type=hidden])')?.focus();
+    }
 
-function removeMptRow(btn) {
-    const tr    = btn.closest('tr');
-    const tbody = tr.closest('tbody');
-    tr.remove();
-    if (tbody.querySelectorAll('tr:not([data-mpt-empty])').length === 0) {
+    function removePoCard(btn, containerId, emptyMsgId) {
+        const card = btn.closest('[data-po-card]');
+        const container = document.getElementById(containerId);
+        card.remove();
+        if (container.querySelectorAll('[data-po-card]').length === 0) {
+            const emptyEl = document.getElementById(emptyMsgId);
+            if (emptyEl) emptyEl.style.display = '';
+        }
+    }
+
+    function addMptRow(btn) {
+        const card = btn.closest('[data-po-card]');
+        const poIdx = card.dataset.poIdx;
+        const tbody = card.querySelector('[data-mpt-tbody]');
         const emptyTr = tbody.querySelector('[data-mpt-empty]');
-        if (emptyTr) emptyTr.style.display = '';
+        const mptTpl = document.getElementById('mpt-row-tpl');
+        const mptIdx = parseInt(tbody.dataset.mptCtr || '0');
+        tbody.dataset.mptCtr = mptIdx + 1;
+        if (emptyTr) emptyTr.style.display = 'none';
+        let html = mptTpl.innerHTML.replace(/__PO__/g, poIdx).replace(/__MPT__/g, mptIdx);
+        tbody.insertAdjacentHTML('beforeend', html);
+        tbody.lastElementChild?.querySelector('input')?.focus();
     }
-}
+
+    function removeMptRow(btn) {
+        const tr = btn.closest('tr');
+        const tbody = tr.closest('tbody');
+        tr.remove();
+        if (tbody.querySelectorAll('tr:not([data-mpt-empty])').length === 0) {
+            const emptyTr = tbody.querySelector('[data-mpt-empty]');
+            if (emptyTr) emptyTr.style.display = '';
+        }
+    }
 </script>
 @endpush

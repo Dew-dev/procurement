@@ -1,12 +1,14 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\BgNumberController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\ContractPaymentTermController;
 use App\Http\Controllers\MakerPaymentTermController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\RfqController;
+use App\Http\Controllers\SuretyBondController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -34,6 +36,8 @@ Route::middleware('auth')->group(function () {
         Route::put('contracts/{contract}/purchase-orders', [PurchaseOrderController::class, 'upsert'])->name('contracts.purchase-orders.upsert');
         Route::put('contracts/{contract}/contract-payment-terms', [ContractPaymentTermController::class, 'upsert'])->name('contracts.contract-payment-terms.upsert');
         Route::put('contracts/{contract}/purchase-orders/{purchaseOrder}/maker-payment-terms', [MakerPaymentTermController::class, 'upsert'])->name('contracts.purchase-orders.maker-payment-terms.upsert');
+        Route::put('contracts/{contract}/bg-numbers', [BgNumberController::class, 'upsert'])->name('contracts.bg-numbers.upsert');
+        Route::put('contracts/{contract}/surety-bonds', [SuretyBondController::class, 'upsert'])->name('contracts.surety-bonds.upsert');
     });
 
     // --- Read-only routes (all authenticated users) ---

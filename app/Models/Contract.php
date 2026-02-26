@@ -16,6 +16,7 @@ class Contract extends Model
         'rfq_from_buyer',
         'quotation_to_buyer',
         'contract_date',
+        'delivery_date',
     ];
 
     protected function casts(): array
@@ -24,6 +25,7 @@ class Contract extends Model
             'rfq_from_buyer' => 'date',
             'quotation_to_buyer' => 'date',
             'contract_date' => 'date',
+            'delivery_date' => 'date',
         ];
     }
 
@@ -45,5 +47,15 @@ class Contract extends Model
     public function contractPaymentTerms(): HasMany
     {
         return $this->hasMany(ContractPaymentTerm::class);
+    }
+
+    public function bgNumbers(): HasMany
+    {
+        return $this->hasMany(BgNumber::class);
+    }
+
+    public function suretyBonds(): HasMany
+    {
+        return $this->hasMany(SuretyBond::class);
     }
 }

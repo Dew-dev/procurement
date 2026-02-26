@@ -31,6 +31,7 @@ class ContractController extends Controller
             'rfq_from_buyer'     => ['nullable', 'date'],
             'quotation_to_buyer' => ['nullable', 'date'],
             'contract_date'      => ['nullable', 'date'],
+            'delivery_date'      => ['nullable', 'date'],
         ]);
 
         $contract = Contract::create($data);
@@ -90,6 +91,26 @@ class ContractController extends Controller
             }
         }
 
+        // BG Numbers
+        foreach ($request->input('bg_numbers', []) as $item) {
+            $contract->bgNumbers()->create([
+                'number'     => $item['number'] ?? null,
+                'periode'    => $item['periode'] ?? null,
+                'start_date' => ($item['start_date'] ?? '') ?: null,
+                'end_date'   => ($item['end_date'] ?? '') ?: null,
+            ]);
+        }
+
+        // Surety Bonds
+        foreach ($request->input('surety_bonds', []) as $item) {
+            $contract->suretyBonds()->create([
+                'number'     => $item['number'] ?? null,
+                'periode'    => $item['periode'] ?? null,
+                'start_date' => ($item['start_date'] ?? '') ?: null,
+                'end_date'   => ($item['end_date'] ?? '') ?: null,
+            ]);
+        }
+
         return redirect()->route('contracts.show', $contract)->with('success', 'Contract berhasil dibuat.');
     }
 
@@ -100,6 +121,8 @@ class ContractController extends Controller
             'quotations',
             'purchaseOrders.makerPaymentTerms',
             'contractPaymentTerms',
+            'bgNumbers',
+            'suretyBonds',
         ]);
 
         return view('contracts.show', compact('contract'));
@@ -107,7 +130,7 @@ class ContractController extends Controller
 
     public function edit(Contract $contract)
     {
-        $contract->load(['rfqs', 'quotations', 'purchaseOrders.makerPaymentTerms', 'contractPaymentTerms']);
+        $contract->load(['rfqs', 'quotations', 'purchaseOrders.makerPaymentTerms', 'contractPaymentTerms', 'bgNumbers', 'suretyBonds']);
 
         return view('contracts.form', [
             'contract' => $contract,
@@ -123,6 +146,7 @@ class ContractController extends Controller
             'rfq_from_buyer'     => ['nullable', 'date'],
             'quotation_to_buyer' => ['nullable', 'date'],
             'contract_date'      => ['nullable', 'date'],
+            'delivery_date'      => ['nullable', 'date'],
         ]);
 
         $contract->update($data);
@@ -233,6 +257,46 @@ class ContractController extends Controller
             $po->makerPaymentTerms()->whereNotIn('id', $submittedMptIds ?: [0])->delete();
         }
         $contract->purchaseOrders()->whereNotIn('id', $submittedPoIds ?: [0])->delete();
+
+        // ── BG Numbers (sync) ────────────────────────────────────────────
+        $submittedBgIds = [];
+        foreach ($request->input('bg_numbers', []) as $item) {
+            $id = $item['id'] ?? null;
+            $bgData = [
+                'number'     => $item['number'] ?? null,
+                'periode'    => $item['periode'] ?? null,
+                'start_date' => ($item['start_date'] ?? '') ?: null,
+                'end_date'   => ($item['end_date'] ?? '') ?: null,
+            ];
+            if ($id) {
+                $contract->bgNumbers()->where('id', $id)->update($bgData);
+                $submittedBgIds[] = (int) $id;
+            } else {
+                $new = $contract->bgNumbers()->create($bgData);
+                $submittedBgIds[] = $new->id;
+            }
+        }
+        $contract->bgNumbers()->whereNotIn('id', $submittedBgIds ?: [0])->delete();
+
+        // ── Surety Bonds (sync) ──────────────────────────────────────────
+        $submittedSbIds = [];
+        foreach ($request->input('surety_bonds', []) as $item) {
+            $id = $item['id'] ?? null;
+            $sbData = [
+                'number'     => $item['number'] ?? null,
+                'periode'    => $item['periode'] ?? null,
+                'start_date' => ($item['start_date'] ?? '') ?: null,
+                'end_date'   => ($item['end_date'] ?? '') ?: null,
+            ];
+            if ($id) {
+                $contract->suretyBonds()->where('id', $id)->update($sbData);
+                $submittedSbIds[] = (int) $id;
+            } else {
+                $new = $contract->suretyBonds()->create($sbData);
+                $submittedSbIds[] = $new->id;
+            }
+        }
+        $contract->suretyBonds()->whereNotIn('id', $submittedSbIds ?: [0])->delete();
 
         return redirect()->route('contracts.show', $contract)->with('success', 'Contract berhasil diperbarui.');
     }

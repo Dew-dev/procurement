@@ -36,15 +36,16 @@
         </div>
         @endif
     </div>
-    <dl class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+    <dl class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
         <div><dt class="text-slate-400 text-xs">RFQ from Buyer</dt><dd class="font-medium">{{ $contract->rfq_from_buyer?->format('d M Y') ?? '' }}</dd></div>
         <div><dt class="text-slate-400 text-xs">Quotation to Buyer</dt><dd class="font-medium">{{ $contract->quotation_to_buyer?->format('d M Y') ?? '' }}</dd></div>
         <div><dt class="text-slate-400 text-xs">Contract Date</dt><dd class="font-medium">{{ $contract->contract_date?->format('d M Y') ?? '' }}</dd></div>
+        <div><dt class="text-slate-400 text-xs">Delivery Date</dt><dd class="font-medium">{{ $contract->delivery_date?->format('d M Y') ?? '' }}</dd></div>
     </dl>
 </div>
 
 {{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-     SECTION 1 â€” CONTRACT PAYMENT TERMS
+     SECTION 1 CONTRACT PAYMENT TERMS
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
 <div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
     <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
@@ -473,6 +474,146 @@
 </div>
 @endif
 
+{{-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 6 – BG NUMBERS
+═══════════════════════════════════════════════════════════════════════ --}}
+<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
+    <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+        <h2 class="font-semibold text-slate-800">BG Number</h2>
+        <span class="text-xs text-slate-400">{{ $contract->bgNumbers->count() }} baris</span>
+    </div>
+
+    @if($isAdmin)
+    <form method="POST" action="{{ route('contracts.bg-numbers.upsert', $contract) }}">
+        @csrf @method('PUT')
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="border-b border-slate-100">
+                    <tr>
+                        <th class="{{ $th }}">Number</th>
+                        <th class="{{ $th }}">Periode</th>
+                        <th class="{{ $th }}">Start Date</th>
+                        <th class="{{ $th }}">End Date</th>
+                        <th class="px-3 py-2 w-8"></th>
+                    </tr>
+                </thead>
+                <tbody id="bg-tbody">
+                @foreach($contract->bgNumbers as $i => $bg)
+                <tr class="border-b border-slate-50 hover:bg-slate-50">
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][number]" value="{{ $bg->number }}" placeholder="No. BG"><input type="hidden" name="items[{{ $i }}][id]" value="{{ $bg->id }}" data-row-id></td>
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][periode]" value="{{ $bg->periode }}" placeholder="misal: 12 bulan"></td>
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[{{ $i }}][start_date]" value="{{ $bg->start_date?->format('Y-m-d') }}"></td>
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[{{ $i }}][end_date]" value="{{ $bg->end_date?->format('Y-m-d') }}"></td>
+                    <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
+                </tr>
+                @endforeach
+                </tbody>
+            </table>
+        </div>
+        <div class="px-4 py-3 flex gap-2 border-t border-slate-100">
+            <button type="button" onclick="addRow('bg-tbody','bg-row-tpl',counters,'bg')" class="{{ $btnAdd }}">+ Tambah Baris</button>
+            <button type="submit" class="{{ $btnSave }}">Simpan</button>
+        </div>
+    </form>
+
+    <template id="bg-row-tpl">
+        <tr class="border-b border-slate-50 hover:bg-slate-50">
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][number]" placeholder="No. BG"><input type="hidden" name="items[__IDX__][id]" value="" data-row-id></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][periode]" placeholder="misal: 12 bulan"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[__IDX__][start_date]"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[__IDX__][end_date]"></td>
+            <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
+        </tr>
+    </template>
+
+    @else
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="border-b border-slate-100"><tr>
+                <th class="{{ $th }}">Number</th><th class="{{ $th }}">Periode</th><th class="{{ $th }}">Start Date</th><th class="{{ $th }}">End Date</th>
+            </tr></thead>
+            <tbody>
+            @forelse($contract->bgNumbers as $bg)
+            <tr class="border-b border-slate-50"><td class="{{ $td }}">{{ $bg->number ?: '' }}</td><td class="{{ $td }}">{{ $bg->periode ?: '' }}</td><td class="{{ $td }}">{{ $bg->start_date?->format('d/m/Y') ?? '' }}</td><td class="{{ $td }}">{{ $bg->end_date?->format('d/m/Y') ?? '' }}</td></tr>
+            @empty
+            <tr><td colspan="4" class="px-4 py-4 text-center text-slate-400 text-sm">Belum ada data</td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
+    @endif
+</div>
+
+{{-- ═══════════════════════════════════════════════════════════════════════
+     SECTION 7 – SURETY BONDS
+═══════════════════════════════════════════════════════════════════════ --}}
+<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
+    <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+        <h2 class="font-semibold text-slate-800">Surety Bond</h2>
+        <span class="text-xs text-slate-400">{{ $contract->suretyBonds->count() }} baris</span>
+    </div>
+
+    @if($isAdmin)
+    <form method="POST" action="{{ route('contracts.surety-bonds.upsert', $contract) }}">
+        @csrf @method('PUT')
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="border-b border-slate-100">
+                    <tr>
+                        <th class="{{ $th }}">Number</th>
+                        <th class="{{ $th }}">Periode</th>
+                        <th class="{{ $th }}">Start Date</th>
+                        <th class="{{ $th }}">End Date</th>
+                        <th class="px-3 py-2 w-8"></th>
+                    </tr>
+                </thead>
+                <tbody id="sb-tbody">
+                @foreach($contract->suretyBonds as $i => $sb)
+                <tr class="border-b border-slate-50 hover:bg-slate-50">
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][number]" value="{{ $sb->number }}" placeholder="No. Surety Bond"><input type="hidden" name="items[{{ $i }}][id]" value="{{ $sb->id }}" data-row-id></td>
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][periode]" value="{{ $sb->periode }}" placeholder="misal: 12 bulan"></td>
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[{{ $i }}][start_date]" value="{{ $sb->start_date?->format('Y-m-d') }}"></td>
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[{{ $i }}][end_date]" value="{{ $sb->end_date?->format('Y-m-d') }}"></td>
+                    <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
+                </tr>
+                @endforeach
+                </tbody>
+            </table>
+        </div>
+        <div class="px-4 py-3 flex gap-2 border-t border-slate-100">
+            <button type="button" onclick="addRow('sb-tbody','sb-row-tpl',counters,'sb')" class="{{ $btnAdd }}">+ Tambah Baris</button>
+            <button type="submit" class="{{ $btnSave }}">Simpan</button>
+        </div>
+    </form>
+
+    <template id="sb-row-tpl">
+        <tr class="border-b border-slate-50 hover:bg-slate-50">
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][number]" placeholder="No. Surety Bond"><input type="hidden" name="items[__IDX__][id]" value="" data-row-id></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][periode]" placeholder="misal: 12 bulan"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[__IDX__][start_date]"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[__IDX__][end_date]"></td>
+            <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
+        </tr>
+    </template>
+
+    @else
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="border-b border-slate-100"><tr>
+                <th class="{{ $th }}">Number</th><th class="{{ $th }}">Periode</th><th class="{{ $th }}">Start Date</th><th class="{{ $th }}">End Date</th>
+            </tr></thead>
+            <tbody>
+            @forelse($contract->suretyBonds as $sb)
+            <tr class="border-b border-slate-50"><td class="{{ $td }}">{{ $sb->number ?: '' }}</td><td class="{{ $td }}">{{ $sb->periode ?: '' }}</td><td class="{{ $td }}">{{ $sb->start_date?->format('d/m/Y') ?? '' }}</td><td class="{{ $td }}">{{ $sb->end_date?->format('d/m/Y') ?? '' }}</td></tr>
+            @empty
+            <tr><td colspan="4" class="px-4 py-4 text-center text-slate-400 text-sm">Belum ada data</td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
+    @endif
+</div>
+
 @endsection
 
 @push('scripts')
@@ -483,6 +624,8 @@ const counters = {
     rfq: {{ $contract->rfqs->count() }},
     quo: {{ $contract->quotations->count() }},
     po:  {{ $contract->purchaseOrders->count() }},
+    bg:  {{ $contract->bgNumbers->count() }},
+    sb:  {{ $contract->suretyBonds->count() }},
 };
 
 const mptCounters = {
