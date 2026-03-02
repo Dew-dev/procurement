@@ -64,6 +64,7 @@ class ContractController extends Controller
             $contract->quotations()->create([
                 'quotation_number' => $item['quotation_number'],
                 'quotation_date'   => ($item['quotation_date'] ?? '') ?: null,
+                'maker_name'       => $item['maker_name'] ?? null,
             ]);
         }
 
@@ -211,6 +212,7 @@ class ContractController extends Controller
             $quoData = [
                 'quotation_number' => $item['quotation_number'],
                 'quotation_date'   => ($item['quotation_date'] ?? '') ?: null,
+                'maker_name'       => $item['maker_name'] ?? null,
             ];
             if ($id) {
                 $contract->quotations()->where('id', $id)->update($quoData);

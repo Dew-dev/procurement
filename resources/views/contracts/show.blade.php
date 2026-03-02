@@ -124,7 +124,7 @@
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
 <div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
     <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-        <h2 class="font-semibold text-slate-800">RFQs</h2>
+        <h2 class="font-semibold text-slate-800">Inquiry</h2>
         <span class="text-xs text-slate-400">{{ $contract->rfqs->count() }} baris</span>
     </div>
 
@@ -202,6 +202,7 @@
                     <tr>
                         <th class="{{ $th }}">Quotation Number</th>
                         <th class="{{ $th }}">Quotation Date</th>
+                        <th class="{{ $th }}">Maker Name</th>
                         <th class="px-3 py-2 w-8"></th>
                     </tr>
                 </thead>
@@ -210,6 +211,7 @@
                 <tr class="border-b border-slate-50 hover:bg-slate-50">
                     <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][quotation_number]" value="{{ $q->quotation_number }}" placeholder="QUO-xxx" required><input type="hidden" name="items[{{ $i }}][id]" value="{{ $q->id }}" data-row-id></td>
                     <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[{{ $i }}][quotation_date]" value="{{ $q->quotation_date?->format('Y-m-d') }}"></td>
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][maker_name]" value="{{ $q->maker_name }}" placeholder="Nama maker"></td>
                     <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
                 </tr>
                 @endforeach
@@ -226,6 +228,7 @@
         <tr class="border-b border-slate-50 hover:bg-slate-50">
             <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][quotation_number]" placeholder="QUO-xxx" required><input type="hidden" name="items[__IDX__][id]" value="" data-row-id></td>
             <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[__IDX__][quotation_date]"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][maker_name]" placeholder="Nama maker"></td>
             <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
         </tr>
     </template>
@@ -233,12 +236,12 @@
     @else
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
-            <thead class="border-b border-slate-100"><tr><th class="{{ $th }}">Quotation Number</th><th class="{{ $th }}">Date</th></tr></thead>
+            <thead class="border-b border-slate-100"><tr><th class="{{ $th }}">Quotation Number</th><th class="{{ $th }}">Date</th><th class="{{ $th }}">Maker Name</th></tr></thead>
             <tbody>
             @forelse($contract->quotations as $q)
-            <tr class="border-b border-slate-50"><td class="{{ $td }}">{{ $q->quotation_number }}</td><td class="{{ $td }}">{{ $q->quotation_date?->format('d/m/Y') ?? '' }}</td></tr>
+            <tr class="border-b border-slate-50"><td class="{{ $td }}">{{ $q->quotation_number }}</td><td class="{{ $td }}">{{ $q->quotation_date?->format('d/m/Y') ?? '' }}</td><td class="{{ $td }}">{{ $q->maker_name ?? '' }}</td></tr>
             @empty
-            <tr><td colspan="2" class="px-4 py-4 text-center text-slate-400 text-sm">Belum ada data</td></tr>
+            <tr><td colspan="3" class="px-4 py-4 text-center text-slate-400 text-sm">Belum ada data</td></tr>
             @endforelse
             </tbody>
         </table>

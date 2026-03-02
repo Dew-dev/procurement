@@ -23,6 +23,7 @@ class QuotationController extends Controller
             $data = [
                 'quotation_number' => $item['quotation_number'] ?? null,
                 'quotation_date'   => $item['quotation_date'] ?: null,
+                'maker_name'       => $item['maker_name'] ?? null,
             ];
 
             if (empty($data['quotation_number'])) continue;

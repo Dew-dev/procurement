@@ -212,7 +212,7 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
     {{-- RFQs --}}
     <div class="{{ $section }}">
         <div class="{{ $secHead }}">
-            <h2 class="font-semibold text-slate-800">RFQs</h2>
+            <h2 class="font-semibold text-slate-800">Inquiry</h2>
             <button type="button" onclick="addRow('rfq-tbody','rfq-tpl',ctrs,'rfq')" class="{{ $btnAdd }}">+ Tambah</button>
         </div>
         <div class="overflow-x-auto">
@@ -265,6 +265,7 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
                     <tr>
                         <th class="{{ $th }}">Quotation Number</th>
                         <th class="{{ $th }}">Quotation Date</th>
+                        <th class="{{ $th }}">Maker Name</th>
                         <th class="w-10"></th>
                     </tr>
                 </thead>
@@ -276,11 +277,12 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
                             <input class="{{ $inp }}" type="text" name="quotations[{{ $i }}][quotation_number]" value="{{ $quo->quotation_number }}" placeholder="QUO-xxx">
                         </td>
                         <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="quotations[{{ $i }}][quotation_date]" value="{{ optional($quo->quotation_date)->format('Y-m-d') }}"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="quotations[{{ $i }}][maker_name]" value="{{ $quo->maker_name }}" placeholder="Nama maker"></td>
                         <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'quo-tbody','quo-empty-msg')" class="{{ $btnDel }}">×</button></td>
                     </tr>
                     @endforeach
                     <tr class="border-b border-slate-50" id="quo-empty-msg" {{ $existingQuos->isNotEmpty() ? ' style="display:none"' : '' }}>
-                        <td colspan="3" class="px-3 py-3 text-center text-slate-400 text-sm italic">Klik "+ Tambah" untuk menambah baris</td>
+                        <td colspan="4" class="px-3 py-3 text-center text-slate-400 text-sm italic">Klik "+ Tambah" untuk menambah baris</td>
                     </tr>
                 </tbody>
             </table>
@@ -290,6 +292,7 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
         <tr class="border-b border-slate-50 hover:bg-slate-50">
             <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="quotations[__IDX__][quotation_number]" placeholder="QUO-xxx"></td>
             <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="quotations[__IDX__][quotation_date]"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="quotations[__IDX__][maker_name]" placeholder="Nama maker"></td>
             <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'quo-tbody','quo-empty-msg')" class="{{ $btnDel }}">×</button></td>
         </tr>
     </template>

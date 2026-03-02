@@ -14,6 +14,7 @@ class Quotation extends Model
         'contract_id',
         'quotation_number',
         'quotation_date',
+        'maker_name',
     ];
 
     protected function casts(): array
