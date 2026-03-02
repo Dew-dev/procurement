@@ -20,7 +20,6 @@ class PurchaseOrder extends Model
         'exact_delivery_date',
         'dimension',
         'weight',
-        'shipping_documents',
         'incoterm',
     ];
 
@@ -40,5 +39,10 @@ class PurchaseOrder extends Model
     public function makerPaymentTerms(): HasMany
     {
         return $this->hasMany(MakerPaymentTerm::class, 'po_id');
+    }
+
+    public function shippingDocuments(): HasMany
+    {
+        return $this->hasMany(ShippingDocument::class);
     }
 }

@@ -256,7 +256,7 @@
     </div>
 
     @if($isAdmin)
-    <form method="POST" action="{{ route('contracts.purchase-orders.upsert', $contract) }}">
+    <form method="POST" action="{{ route('contracts.purchase-orders.upsert', $contract) }}" enctype="multipart/form-data">
         @csrf @method('PUT')
 
         <div id="po-cards" class="divide-y divide-slate-100">
@@ -303,7 +303,20 @@
                 </div>
                 <div class="col-span-2 sm:col-span-3 lg:col-span-4">
                     <label class="text-xs text-slate-400 mb-0.5 block">Shipping Documents</label>
-                    <textarea class="{{ $inp }}" name="items[{{ $i }}][shipping_documents]" rows="2" placeholder="B/L, Packing List">{{ $po->shipping_documents }}</textarea>
+                    @foreach($po->shippingDocuments as $doc)
+                    <div class="flex items-center gap-2 mb-1">
+                        <input type="checkbox" name="items[{{ $i }}][delete_shipping_docs][]" value="{{ $doc->id }}" class="accent-red-500" id="del-doc-{{ $doc->id }}">
+                        <label for="del-doc-{{ $doc->id }}" class="text-xs text-red-400 cursor-pointer">Hapus</label>
+                        <a href="{{ $doc->url }}" target="_blank" class="text-xs text-sky-600 hover:underline truncate">{{ $doc->name }}</a>
+                    </div>
+                    @endforeach
+                    <div class="space-y-1" data-sdoc-rows>
+                        <div class="flex gap-1 items-center sdoc-row">
+                            <input class="{{ $inp }} flex-1" type="text" name="items[{{ $i }}][new_shipping_docs][0][name]" placeholder="Nama dokumen (B/L, Packing List…)">
+                            <input class="{{ $inp }} flex-1" type="file" name="items[{{ $i }}][new_shipping_docs][0][file]">
+                            <button type="button" onclick="addSdocRow(this,'{{ $i }}')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -359,7 +372,13 @@
                 </div>
                 <div class="col-span-2 sm:col-span-3 lg:col-span-4">
                     <label class="text-xs text-slate-400 mb-0.5 block">Shipping Documents</label>
-                    <textarea class="{{ $inp }}" name="items[__IDX__][shipping_documents]" rows="2" placeholder="B/L, Packing List"></textarea>
+                    <div class="space-y-1" data-sdoc-rows>
+                        <div class="flex gap-1 items-center sdoc-row">
+                            <input class="{{ $inp }} flex-1" type="text" name="items[__IDX__][new_shipping_docs][0][name]" placeholder="Nama dokumen (B/L, Packing List…)">
+                            <input class="{{ $inp }} flex-1" type="file" name="items[__IDX__][new_shipping_docs][0][file]">
+                            <button type="button" onclick="addSdocRow(this,'__IDX__')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -378,7 +397,7 @@
             <div><dt class="text-slate-400 text-xs">Dimension</dt><dd>{{ $po->dimension ?: '' }}</dd></div>
             <div><dt class="text-slate-400 text-xs">Weight</dt><dd>{{ $po->weight ?: '' }}</dd></div>
             <div><dt class="text-slate-400 text-xs">Incoterm</dt><dd>{{ $po->incoterm ?: '' }}</dd></div>
-            <div class="col-span-2"><dt class="text-slate-400 text-xs">Shipping Docs</dt><dd>{{ $po->shipping_documents ?: '' }}</dd></div>
+            <div class="col-span-2"><dt class="text-slate-400 text-xs">Shipping Docs</dt><dd class="flex flex-wrap gap-x-3 gap-y-1">@foreach($po->shippingDocuments as $doc)<a href="{{ $doc->url }}" target="_blank" class="text-sky-600 hover:underline text-sm">{{ $doc->name }}</a>@endforeach{{ $po->shippingDocuments->isEmpty() ? '-' : '' }}</dd></div>
         </dl>
     </div>
     @empty
@@ -695,6 +714,18 @@ function removeRow(btn) {
 }
 
 // â”€â”€ Add a new PO card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Add a shipping-doc row ─────────────────────────────────────────────────
+function addSdocRow(btn, idx) {
+    const wrapper = btn.closest('[data-sdoc-rows]');
+    const rowCount = wrapper.querySelectorAll('.sdoc-row').length;
+    const div = document.createElement('div');
+    div.className = 'flex gap-1 items-center sdoc-row';
+    div.innerHTML = `<input class="border border-slate-300 rounded px-2 py-1 text-sm w-full flex-1" type="text" name="items[${idx}][new_shipping_docs][${rowCount}][name]" placeholder="Nama dokumen">
+        <input class="border border-slate-300 rounded px-2 py-1 text-sm flex-1" type="file" name="items[${idx}][new_shipping_docs][${rowCount}][file]">
+        <button type="button" onclick="this.closest('.sdoc-row').remove()" class="text-xs px-2 py-1 rounded bg-red-100 text-red-500 hover:bg-red-200 font-medium">&times;</button>`;
+    btn.closest('.sdoc-row').after(div);
+}
+
 function addPoCard() {
     const container = document.getElementById('po-cards');
     const tpl       = document.getElementById('po-card-tpl');

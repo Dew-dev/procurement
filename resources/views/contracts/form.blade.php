@@ -23,6 +23,7 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
 
 <form method="POST"
     action="{{ $isEdit ? route('contracts.update', $contract) : route('contracts.store') }}"
+    enctype="multipart/form-data"
     class="space-y-6">
     @csrf
     @if($isEdit) @method('PUT') @endif
@@ -319,7 +320,23 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
                     <div><label class="text-xs text-slate-400 mb-0.5 block">Dimension</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][dimension]" value="{{ $po->dimension }}" placeholder="pxlxt cm"></div>
                     <div><label class="text-xs text-slate-400 mb-0.5 block">Weight</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][weight]" value="{{ $po->weight }}" placeholder="kg"></div>
                     <div><label class="text-xs text-slate-400 mb-0.5 block">Incoterm</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][incoterm]" value="{{ $po->incoterm }}" placeholder="FOB, CIF "></div>
-                    <div class="col-span-2 sm:col-span-3 lg:col-span-4"><label class="text-xs text-slate-400 mb-0.5 block">Shipping Documents</label><textarea class="{{ $inp }}" name="purchase_orders[{{ $pi }}][shipping_documents]" rows="2" placeholder="B/L, Packing List ">{{ $po->shipping_documents }}</textarea></div>
+                    <div class="col-span-2 sm:col-span-3 lg:col-span-4">
+                        <label class="text-xs text-slate-400 mb-0.5 block">Shipping Documents</label>
+                        @foreach($po->shippingDocuments as $doc)
+                        <div class="flex items-center gap-2 mb-1">
+                            <input type="checkbox" name="purchase_orders[{{ $pi }}][delete_shipping_docs][]" value="{{ $doc->id }}" class="accent-red-500" id="fdel-doc-{{ $doc->id }}">
+                            <label for="fdel-doc-{{ $doc->id }}" class="text-xs text-red-400 cursor-pointer">Hapus</label>
+                            <a href="{{ $doc->url }}" target="_blank" class="text-xs text-sky-600 hover:underline truncate">{{ $doc->name }}</a>
+                        </div>
+                        @endforeach
+                        <div class="space-y-1" data-sdoc-rows>
+                            <div class="flex gap-1 items-center sdoc-row">
+                                <input class="{{ $inp }} flex-1" type="text" name="purchase_orders[{{ $pi }}][new_shipping_docs][0][name]" placeholder="Nama dokumen (B/L, Packing List…)">
+                                <input class="{{ $inp }} flex-1" type="file" name="purchase_orders[{{ $pi }}][new_shipping_docs][0][file]">
+                                <button type="button" onclick="addSdocRowForm(this,'{{ $pi }}')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 {{-- Nested MPTs for existing PO --}}
                 <div class="rounded-lg border border-slate-100 overflow-hidden">
@@ -383,7 +400,16 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
                 <div><label class="text-xs text-slate-400 mb-0.5 block">Dimension</label><input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][dimension]" placeholder="pxlxt cm"></div>
                 <div><label class="text-xs text-slate-400 mb-0.5 block">Weight</label><input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][weight]" placeholder="kg"></div>
                 <div><label class="text-xs text-slate-400 mb-0.5 block">Incoterm</label><input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][incoterm]" placeholder="FOB, CIF "></div>
-                <div class="col-span-2 sm:col-span-3 lg:col-span-4"><label class="text-xs text-slate-400 mb-0.5 block">Shipping Documents</label><textarea class="{{ $inp }}" name="purchase_orders[__PO__][shipping_documents]" rows="2" placeholder="B/L, Packing List "></textarea></div>
+                <div class="col-span-2 sm:col-span-3 lg:col-span-4">
+                    <label class="text-xs text-slate-400 mb-0.5 block">Shipping Documents</label>
+                    <div class="space-y-1" data-sdoc-rows>
+                        <div class="flex gap-1 items-center sdoc-row">
+                            <input class="{{ $inp }} flex-1" type="text" name="purchase_orders[__PO__][new_shipping_docs][0][name]" placeholder="Nama dokumen (B/L, Packing List…)">
+                            <input class="{{ $inp }} flex-1" type="file" name="purchase_orders[__PO__][new_shipping_docs][0][file]">
+                            <button type="button" onclick="addSdocRowForm(this,'__PO__')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+</button>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="rounded-lg border border-slate-100 overflow-hidden">
                 <div class="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
@@ -471,6 +497,17 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
             const emptyEl = document.getElementById(emptyMsgId);
             if (emptyEl) emptyEl.style.display = '';
         }
+    }
+
+    function addSdocRowForm(btn, pi) {
+        const wrapper = btn.closest('[data-sdoc-rows]');
+        const rowCount = wrapper.querySelectorAll('.sdoc-row').length;
+        const div = document.createElement('div');
+        div.className = 'flex gap-1 items-center sdoc-row';
+        div.innerHTML = `<input class="border border-slate-300 rounded px-2 py-1 text-sm w-full flex-1" type="text" name="purchase_orders[${pi}][new_shipping_docs][${rowCount}][name]" placeholder="Nama dokumen">
+            <input class="border border-slate-300 rounded px-2 py-1 text-sm flex-1" type="file" name="purchase_orders[${pi}][new_shipping_docs][${rowCount}][file]">
+            <button type="button" onclick="this.closest('.sdoc-row').remove()" class="text-xs px-2 py-1 rounded bg-red-100 text-red-500 hover:bg-red-200 font-medium">&times;</button>`;
+        btn.closest('.sdoc-row').after(div);
     }
 
     function addPoCard() {

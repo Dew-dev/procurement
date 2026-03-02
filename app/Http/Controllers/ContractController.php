@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Contract;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class ContractController extends Controller
@@ -67,7 +68,7 @@ class ContractController extends Controller
         }
 
         // Purchase Orders + their Maker Payment Terms
-        foreach ($request->input('purchase_orders', []) as $item) {
+        foreach ($request->input('purchase_orders', []) as $pi => $item) {
             if (empty($item['po_number'])) continue;
             $po = $contract->purchaseOrders()->create([
                 'po_number'           => $item['po_number'],
@@ -77,7 +78,6 @@ class ContractController extends Controller
                 'exact_delivery_date' => ($item['exact_delivery_date'] ?? '') ?: null,
                 'dimension'           => $item['dimension'] ?? null,
                 'weight'              => $item['weight'] ?? null,
-                'shipping_documents'  => $item['shipping_documents'] ?? null,
                 'incoterm'            => $item['incoterm'] ?? null,
             ]);
             foreach ($item['maker_payment_terms'] ?? [] as $mpt) {
@@ -88,6 +88,16 @@ class ContractController extends Controller
                     'invoice_date'   => ($mpt['invoice_date'] ?? '') ?: null,
                     'paid_date'      => ($mpt['paid_date'] ?? '') ?: null,
                 ]);
+            }
+            // Shipping document uploads
+            $uploadedDocs = $request->file("purchase_orders.$pi.new_shipping_docs") ?? [];
+            foreach ($uploadedDocs as $di => $docFiles) {
+                $file    = $docFiles['file'] ?? null;
+                $docName = $item['new_shipping_docs'][$di]['name'] ?? ($file?->getClientOriginalName() ?? 'Document');
+                if ($file && $file->isValid()) {
+                    $path = $file->store('shipping-docs', 'public');
+                    $po->shippingDocuments()->create(['name' => $docName, 'file_path' => $path]);
+                }
             }
         }
 
@@ -120,6 +130,7 @@ class ContractController extends Controller
             'rfqs',
             'quotations',
             'purchaseOrders.makerPaymentTerms',
+            'purchaseOrders.shippingDocuments',
             'contractPaymentTerms',
             'bgNumbers',
             'suretyBonds',
@@ -130,7 +141,7 @@ class ContractController extends Controller
 
     public function edit(Contract $contract)
     {
-        $contract->load(['rfqs', 'quotations', 'purchaseOrders.makerPaymentTerms', 'contractPaymentTerms', 'bgNumbers', 'suretyBonds']);
+        $contract->load(['rfqs', 'quotations', 'purchaseOrders.makerPaymentTerms', 'purchaseOrders.shippingDocuments', 'contractPaymentTerms', 'bgNumbers', 'suretyBonds']);
 
         return view('contracts.form', [
             'contract' => $contract,
@@ -213,7 +224,7 @@ class ContractController extends Controller
 
         // ── Purchase Orders + Maker Payment Terms (sync) ─────────────────
         $submittedPoIds = [];
-        foreach ($request->input('purchase_orders', []) as $item) {
+        foreach ($request->input('purchase_orders', []) as $pi => $item) {
             $id = $item['id'] ?? null;
             if (!$id && empty($item['po_number'])) continue;
             $poData = [
@@ -224,7 +235,6 @@ class ContractController extends Controller
                 'exact_delivery_date' => ($item['exact_delivery_date'] ?? '') ?: null,
                 'dimension'           => $item['dimension'] ?? null,
                 'weight'              => $item['weight'] ?? null,
-                'shipping_documents'  => $item['shipping_documents'] ?? null,
                 'incoterm'            => $item['incoterm'] ?? null,
             ];
             if ($id) {
@@ -255,6 +265,21 @@ class ContractController extends Controller
                 }
             }
             $po->makerPaymentTerms()->whereNotIn('id', $submittedMptIds ?: [0])->delete();
+            // Delete shipping docs marked for removal
+            foreach ($item['delete_shipping_docs'] ?? [] as $docId) {
+                $doc = $po->shippingDocuments()->find($docId);
+                if ($doc) { Storage::disk('public')->delete($doc->file_path); $doc->delete(); }
+            }
+            // Upload new shipping docs
+            $uploadedDocs = $request->file("purchase_orders.$pi.new_shipping_docs") ?? [];
+            foreach ($uploadedDocs as $di => $docFiles) {
+                $file    = $docFiles['file'] ?? null;
+                $docName = $item['new_shipping_docs'][$di]['name'] ?? ($file?->getClientOriginalName() ?? 'Document');
+                if ($file && $file->isValid()) {
+                    $path = $file->store('shipping-docs', 'public');
+                    $po->shippingDocuments()->create(['name' => $docName, 'file_path' => $path]);
+                }
+            }
         }
         $contract->purchaseOrders()->whereNotIn('id', $submittedPoIds ?: [0])->delete();
 
