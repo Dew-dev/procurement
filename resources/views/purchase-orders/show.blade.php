@@ -12,7 +12,7 @@
         <div><span class="text-slate-500 text-sm">PO Number</span><p class="font-medium">{{ $purchaseOrder->po_number }}</p></div>
         <div><span class="text-slate-500 text-sm">Quotation</span><p class="font-medium">{{ $purchaseOrder->quotation?->quotation_number ?: '-' }}</p></div>
         <div><span class="text-slate-500 text-sm">PO Date</span><p class="font-medium">{{ optional($purchaseOrder->po_date)->format('Y-m-d') ?: '-' }}</p></div>
-        <div><span class="text-slate-500 text-sm">Payment Term</span><p class="font-medium">{{ $purchaseOrder->po_payment_term ?: '-' }}</p></div>
+        <!-- <div><span class="text-slate-500 text-sm">Payment Term</span><p class="font-medium">{{ $purchaseOrder->po_payment_term ?: '-' }}</p></div> -->
         <div><span class="text-slate-500 text-sm">WIP Status</span><p class="font-medium">{{ $purchaseOrder->wip_status ?: '-' }}</p></div>
         <div><span class="text-slate-500 text-sm">Exact Delivery Date</span><p class="font-medium">{{ optional($purchaseOrder->exact_delivery_date)->format('Y-m-d') ?: '-' }}</p></div>
         <div><span class="text-slate-500 text-sm">Dimension</span><p class="font-medium">{{ $purchaseOrder->dimension ?: '-' }}</p></div>

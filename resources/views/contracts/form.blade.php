@@ -317,7 +317,7 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
                         <input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][po_number]" value="{{ $po->po_number }}" placeholder="PO-xxx" required>
                     </div>
                     <div><label class="text-xs text-slate-400 mb-0.5 block">PO Date</label><input class="{{ $inp }}" type="date" name="purchase_orders[{{ $pi }}][po_date]" value="{{ optional($po->po_date)->format('Y-m-d') }}"></div>
-                    <div><label class="text-xs text-slate-400 mb-0.5 block">Payment Term</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][po_payment_term]" value="{{ $po->po_payment_term }}" placeholder="30 hari"></div>
+                    <!-- <div><label class="text-xs text-slate-400 mb-0.5 block">Payment Term</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][po_payment_term]" value="{{ $po->po_payment_term }}" placeholder="30 hari"></div> -->
                     <div><label class="text-xs text-slate-400 mb-0.5 block">WIP Status</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][wip_status]" value="{{ $po->wip_status }}" placeholder="On Track "></div>
                     <div><label class="text-xs text-slate-400 mb-0.5 block">Delivery Date</label><input class="{{ $inp }}" type="date" name="purchase_orders[{{ $pi }}][exact_delivery_date]" value="{{ optional($po->exact_delivery_date)->format('Y-m-d') }}"></div>
                     <div><label class="text-xs text-slate-400 mb-0.5 block">Dimension</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][dimension]" value="{{ $po->dimension }}" placeholder="pxlxt cm"></div>

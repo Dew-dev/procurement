@@ -280,10 +280,10 @@
                     <label class="text-xs text-slate-400 mb-0.5 block">PO Date</label>
                     <input class="{{ $inp }}" type="date" name="items[{{ $i }}][po_date]" value="{{ $po->po_date?->format('Y-m-d') }}">
                 </div>
-                <div>
+                <!-- <div>
                     <label class="text-xs text-slate-400 mb-0.5 block">Payment Term</label>
                     <input class="{{ $inp }}" type="text" name="items[{{ $i }}][po_payment_term]" value="{{ $po->po_payment_term }}" placeholder="misal: 30 hari">
-                </div>
+                </div> -->
                 <div>
                     <label class="text-xs text-slate-400 mb-0.5 block">WIP Status</label>
                     <input class="{{ $inp }}" type="text" name="items[{{ $i }}][wip_status]" value="{{ $po->wip_status }}" placeholder="On Track / Late">
@@ -349,10 +349,10 @@
                     <label class="text-xs text-slate-400 mb-0.5 block">PO Date</label>
                     <input class="{{ $inp }}" type="date" name="items[__IDX__][po_date]">
                 </div>
-                <div>
+                <!-- <div>
                     <label class="text-xs text-slate-400 mb-0.5 block">Payment Term</label>
                     <input class="{{ $inp }}" type="text" name="items[__IDX__][po_payment_term]" placeholder="misal: 30 hari">
-                </div>
+                </div> -->
                 <div>
                     <label class="text-xs text-slate-400 mb-0.5 block">WIP Status</label>
                     <input class="{{ $inp }}" type="text" name="items[__IDX__][wip_status]" placeholder="On Track / Late">

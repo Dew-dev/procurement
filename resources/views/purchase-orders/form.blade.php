@@ -24,7 +24,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div><label class="block text-sm font-medium mb-1">PO Number</label><input name="po_number" value="{{ old('po_number', $purchaseOrder->po_number) }}" required class="w-full rounded-lg border border-slate-300 px-3 py-2"></div>
             <div><label class="block text-sm font-medium mb-1">PO Date</label><input type="date" name="po_date" value="{{ old('po_date', optional($purchaseOrder->po_date)->format('Y-m-d')) }}" class="w-full rounded-lg border border-slate-300 px-3 py-2"></div>
-            <div><label class="block text-sm font-medium mb-1">Payment Term</label><input name="po_payment_term" value="{{ old('po_payment_term', $purchaseOrder->po_payment_term) }}" class="w-full rounded-lg border border-slate-300 px-3 py-2"></div>
+            <!-- <div><label class="block text-sm font-medium mb-1">Payment Term</label><input name="po_payment_term" value="{{ old('po_payment_term', $purchaseOrder->po_payment_term) }}" class="w-full rounded-lg border border-slate-300 px-3 py-2"></div> -->
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
