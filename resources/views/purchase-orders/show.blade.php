@@ -22,7 +22,7 @@
     </div>
 
     <div class="bg-white border border-slate-200 rounded-xl p-5">
-        <h2 class="font-semibold mb-3">Maker Payment Terms</h2>
+        <h2 class="font-semi b bold mb-3">Maker Payment Terms</h2>
         <ul class="text-sm space-y-2">
             @forelse ($purchaseOrder->makerPaymentTerms as $term)
                 <li>{{ $term->term_code ?: '-' }} - {{ $term->percentage ?: 0 }}%</li>

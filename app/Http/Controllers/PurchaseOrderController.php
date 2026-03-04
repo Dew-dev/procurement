@@ -21,6 +21,7 @@ class PurchaseOrderController extends Controller
             'dimension'           => $item['dimension'] ?? null,
             'weight'              => $item['weight'] ?? null,
             'incoterm'            => $item['incoterm'] ?? null,
+            'expedite'            => $item['expedite'] ?? null,
         ];
     }
 

@@ -21,6 +21,7 @@ class PurchaseOrder extends Model
         'dimension',
         'weight',
         'incoterm',
+        'expedite',
     ];
 
     protected function casts(): array

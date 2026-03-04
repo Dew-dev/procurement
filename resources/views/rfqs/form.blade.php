@@ -23,11 +23,11 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-                <label class="block text-sm font-medium mb-1">RFQ Number</label>
+                <label class="block text-sm font-medium mb-1">Inquiry Number</label>
                 <input name="rfq_number" value="{{ old('rfq_number', $rfq->rfq_number) }}" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
             </div>
             <div>
-                <label class="block text-sm font-medium mb-1">RFQ Date</label>
+                <label class="block text-sm font-medium mb-1">Inquiry date</label>
                 <input type="date" name="rfq_date" value="{{ old('rfq_date', optional($rfq->rfq_date)->format('Y-m-d')) }}" class="w-full rounded-lg border border-slate-300 px-3 py-2">
             </div>
             <div>

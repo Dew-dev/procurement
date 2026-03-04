@@ -14,7 +14,7 @@
         <table class="min-w-full text-sm">
             <thead class="bg-slate-50 text-slate-600">
                 <tr>
-                    <th class="text-left px-4 py-3">RFQ Number</th>
+                    <th class="text-left px-4 py-3">Inquiry Number</th>
                     <th class="text-left px-4 py-3">Contract</th>
                     <th class="text-left px-4 py-3">Maker</th>
                     <th class="text-left px-4 py-3">Tanggal</th>

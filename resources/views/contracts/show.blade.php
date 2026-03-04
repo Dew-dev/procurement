@@ -118,384 +118,6 @@
     </div>
     @endif
 </div>
-
-{{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-     SECTION 2 â€” RFQs
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
-<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
-    <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-        <h2 class="font-semibold text-slate-800">Inquiry</h2>
-        <span class="text-xs text-slate-400">{{ $contract->rfqs->count() }} baris</span>
-    </div>
-
-    @if($isAdmin)
-    <form method="POST" action="{{ route('contracts.rfqs.upsert', $contract) }}">
-        @csrf @method('PUT')
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="border-b border-slate-100">
-                    <tr>
-                        <th class="{{ $th }}">RFQ Number</th>
-                        <th class="{{ $th }}">RFQ Date</th>
-                        <th class="{{ $th }}">Maker</th>
-                        <th class="px-3 py-2 w-8"></th>
-                    </tr>
-                </thead>
-                <tbody id="rfq-tbody">
-                @foreach($contract->rfqs as $i => $rfq)
-                <tr class="border-b border-slate-50 hover:bg-slate-50">
-                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][rfq_number]" value="{{ $rfq->rfq_number }}" placeholder="RFQ-xxx" required><input type="hidden" name="items[{{ $i }}][id]" value="{{ $rfq->id }}" data-row-id></td>
-                    <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[{{ $i }}][rfq_date]" value="{{ $rfq->rfq_date?->format('Y-m-d') }}"></td>
-                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][maker]" value="{{ $rfq->maker }}" placeholder="Nama maker"></td>
-                    <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
-                </tr>
-                @endforeach
-                </tbody>
-            </table>
-        </div>
-        <div class="px-4 py-3 flex gap-2 border-t border-slate-100">
-            <button type="button" onclick="addRow('rfq-tbody','rfq-row-tpl',counters,'rfq')" class="{{ $btnAdd }}">+ Tambah Baris</button>
-            <button type="submit" class="{{ $btnSave }}">Simpan</button>
-        </div>
-    </form>
-
-    <template id="rfq-row-tpl">
-        <tr class="border-b border-slate-50 hover:bg-slate-50">
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][rfq_number]" placeholder="RFQ-xxx" required><input type="hidden" name="items[__IDX__][id]" value="" data-row-id></td>
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[__IDX__][rfq_date]"></td>
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][maker]" placeholder="Nama maker"></td>
-            <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
-        </tr>
-    </template>
-
-    @else
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="border-b border-slate-100"><tr><th class="{{ $th }}">RFQ Number</th><th class="{{ $th }}">RFQ Date</th><th class="{{ $th }}">Maker</th></tr></thead>
-            <tbody>
-            @forelse($contract->rfqs as $rfq)
-            <tr class="border-b border-slate-50"><td class="{{ $td }}">{{ $rfq->rfq_number }}</td><td class="{{ $td }}">{{ $rfq->rfq_date?->format('d/m/Y') ?? '' }}</td><td class="{{ $td }}">{{ $rfq->maker ?: '' }}</td></tr>
-            @empty
-            <tr><td colspan="3" class="px-4 py-4 text-center text-slate-400 text-sm">Belum ada data</td></tr>
-            @endforelse
-            </tbody>
-        </table>
-    </div>
-    @endif
-</div>
-
-{{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-     SECTION 3 â€” QUOTATIONS
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
-<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
-    <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-        <h2 class="font-semibold text-slate-800">Quotations</h2>
-        <span class="text-xs text-slate-400">{{ $contract->quotations->count() }} baris</span>
-    </div>
-
-    @if($isAdmin)
-    <form method="POST" action="{{ route('contracts.quotations.upsert', $contract) }}">
-        @csrf @method('PUT')
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="border-b border-slate-100">
-                    <tr>
-                        <th class="{{ $th }}">Quotation Number</th>
-                        <th class="{{ $th }}">Quotation Date</th>
-                        <th class="{{ $th }}">Maker Name</th>
-                        <th class="px-3 py-2 w-8"></th>
-                    </tr>
-                </thead>
-                <tbody id="quo-tbody">
-                @foreach($contract->quotations as $i => $q)
-                <tr class="border-b border-slate-50 hover:bg-slate-50">
-                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][quotation_number]" value="{{ $q->quotation_number }}" placeholder="QUO-xxx" required><input type="hidden" name="items[{{ $i }}][id]" value="{{ $q->id }}" data-row-id></td>
-                    <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[{{ $i }}][quotation_date]" value="{{ $q->quotation_date?->format('Y-m-d') }}"></td>
-                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][maker_name]" value="{{ $q->maker_name }}" placeholder="Nama maker"></td>
-                    <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
-                </tr>
-                @endforeach
-                </tbody>
-            </table>
-        </div>
-        <div class="px-4 py-3 flex gap-2 border-t border-slate-100">
-            <button type="button" onclick="addRow('quo-tbody','quo-row-tpl',counters,'quo')" class="{{ $btnAdd }}">+ Tambah Baris</button>
-            <button type="submit" class="{{ $btnSave }}">Simpan</button>
-        </div>
-    </form>
-
-    <template id="quo-row-tpl">
-        <tr class="border-b border-slate-50 hover:bg-slate-50">
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][quotation_number]" placeholder="QUO-xxx" required><input type="hidden" name="items[__IDX__][id]" value="" data-row-id></td>
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[__IDX__][quotation_date]"></td>
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][maker_name]" placeholder="Nama maker"></td>
-            <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
-        </tr>
-    </template>
-
-    @else
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="border-b border-slate-100"><tr><th class="{{ $th }}">Quotation Number</th><th class="{{ $th }}">Date</th><th class="{{ $th }}">Maker Name</th></tr></thead>
-            <tbody>
-            @forelse($contract->quotations as $q)
-            <tr class="border-b border-slate-50"><td class="{{ $td }}">{{ $q->quotation_number }}</td><td class="{{ $td }}">{{ $q->quotation_date?->format('d/m/Y') ?? '' }}</td><td class="{{ $td }}">{{ $q->maker_name ?? '' }}</td></tr>
-            @empty
-            <tr><td colspan="3" class="px-4 py-4 text-center text-slate-400 text-sm">Belum ada data</td></tr>
-            @endforelse
-            </tbody>
-        </table>
-    </div>
-    @endif
-</div>
-
-{{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-     SECTION 4 â€” PURCHASE ORDERS (cards layout)
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
-<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
-    <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-        <h2 class="font-semibold text-slate-800">Purchase Orders</h2>
-        <span class="text-xs text-slate-400">{{ $contract->purchaseOrders->count() }} PO</span>
-    </div>
-
-    @if($isAdmin)
-    <form method="POST" action="{{ route('contracts.purchase-orders.upsert', $contract) }}" enctype="multipart/form-data">
-        @csrf @method('PUT')
-
-        <div id="po-cards" class="divide-y divide-slate-100">
-        @foreach($contract->purchaseOrders as $i => $po)
-        <div class="p-5" data-po-card>
-            {{-- Hidden ID --}}
-            <input type="hidden" name="items[{{ $i }}][id]" value="{{ $po->id }}" data-row-id>
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">PO #{{ $i + 1 }}</span>
-                <button type="button" onclick="removePoCard(this)" class="{{ $btnDel }}" title="Hapus PO ini">-</button>
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                <div class="col-span-2 sm:col-span-1">
-                    <label class="text-xs text-slate-400 mb-0.5 block">PO Number <span class="text-red-400">*</span></label>
-                    <input class="{{ $inp }}" type="text" name="items[{{ $i }}][po_number]" value="{{ $po->po_number }}" placeholder="PO-xxx" required>
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400 mb-0.5 block">PO Date</label>
-                    <input class="{{ $inp }}" type="date" name="items[{{ $i }}][po_date]" value="{{ $po->po_date?->format('Y-m-d') }}">
-                </div>
-                <!-- <div>
-                    <label class="text-xs text-slate-400 mb-0.5 block">Payment Term</label>
-                    <input class="{{ $inp }}" type="text" name="items[{{ $i }}][po_payment_term]" value="{{ $po->po_payment_term }}" placeholder="misal: 30 hari">
-                </div> -->
-                <div>
-                    <label class="text-xs text-slate-400 mb-0.5 block">WIP Status</label>
-                    <input class="{{ $inp }}" type="text" name="items[{{ $i }}][wip_status]" value="{{ $po->wip_status }}" placeholder="On Track / Late">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400 mb-0.5 block">Delivery Date</label>
-                    <input class="{{ $inp }}" type="date" name="items[{{ $i }}][exact_delivery_date]" value="{{ $po->exact_delivery_date?->format('Y-m-d') }}">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400 mb-0.5 block">Dimension</label>
-                    <input class="{{ $inp }}" type="text" name="items[{{ $i }}][dimension]" value="{{ $po->dimension }}" placeholder="pxlxt cm">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400 mb-0.5 block">Weight</label>
-                    <input class="{{ $inp }}" type="text" name="items[{{ $i }}][weight]" value="{{ $po->weight }}" placeholder="kg">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400 mb-0.5 block">Incoterm</label>
-                    <input class="{{ $inp }}" type="text" name="items[{{ $i }}][incoterm]" value="{{ $po->incoterm }}" placeholder="FOB, CIF">
-                </div>
-                <div class="col-span-2 sm:col-span-3 lg:col-span-4">
-                    <label class="text-xs text-slate-400 mb-0.5 block">Shipping Documents</label>
-                    @foreach($po->shippingDocuments as $doc)
-                    <div class="flex items-center gap-2 mb-1">
-                        <input type="checkbox" name="items[{{ $i }}][delete_shipping_docs][]" value="{{ $doc->id }}" class="accent-red-500" id="del-doc-{{ $doc->id }}">
-                        <label for="del-doc-{{ $doc->id }}" class="text-xs text-red-400 cursor-pointer">Hapus</label>
-                        <a href="{{ $doc->url }}" target="_blank" class="text-xs text-sky-600 hover:underline truncate">{{ $doc->name }}</a>
-                    </div>
-                    @endforeach
-                    <div class="space-y-1" data-sdoc-rows>
-                        <div class="flex gap-1 items-center sdoc-row">
-                            <input class="{{ $inp }} flex-1" type="text" name="items[{{ $i }}][new_shipping_docs][0][name]" placeholder="Nama dokumen (B/L, Packing List…)">
-                            <input class="{{ $inp }} flex-1" type="file" name="items[{{ $i }}][new_shipping_docs][0][file]">
-                            <button type="button" onclick="addSdocRow(this,'{{ $i }}')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        @endforeach
-        </div>
-
-        <div class="px-5 py-3 border-t border-slate-100 flex gap-2">
-            <button type="button" onclick="addPoCard()" class="{{ $btnAdd }}">+ Tambah PO</button>
-            <button type="submit" class="{{ $btnSave }}">Simpan Semua PO</button>
-        </div>
-    </form>
-
-    {{-- Template for a new PO card --}}
-    <template id="po-card-tpl">
-        <div class="p-5 border-t border-slate-100" data-po-card>
-            <input type="hidden" name="items[__IDX__][id]" value="" data-row-id>
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">PO baru</span>
-                <button type="button" onclick="removePoCard(this)" class="{{ $btnDel }}" title="Hapus">-</button>
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                <div class="col-span-2 sm:col-span-1">
-                    <label class="text-xs text-slate-400 mb-0.5 block">PO Number <span class="text-red-400">*</span></label>
-                    <input class="{{ $inp }}" type="text" name="items[__IDX__][po_number]" placeholder="PO-xxx" required>
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400 mb-0.5 block">PO Date</label>
-                    <input class="{{ $inp }}" type="date" name="items[__IDX__][po_date]">
-                </div>
-                <!-- <div>
-                    <label class="text-xs text-slate-400 mb-0.5 block">Payment Term</label>
-                    <input class="{{ $inp }}" type="text" name="items[__IDX__][po_payment_term]" placeholder="misal: 30 hari">
-                </div> -->
-                <div>
-                    <label class="text-xs text-slate-400 mb-0.5 block">WIP Status</label>
-                    <input class="{{ $inp }}" type="text" name="items[__IDX__][wip_status]" placeholder="On Track / Late">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400 mb-0.5 block">Delivery Date</label>
-                    <input class="{{ $inp }}" type="date" name="items[__IDX__][exact_delivery_date]">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400 mb-0.5 block">Dimension</label>
-                    <input class="{{ $inp }}" type="text" name="items[__IDX__][dimension]" placeholder="pxlxt cm">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400 mb-0.5 block">Weight</label>
-                    <input class="{{ $inp }}" type="text" name="items[__IDX__][weight]" placeholder="kg">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400 mb-0.5 block">Incoterm</label>
-                    <input class="{{ $inp }}" type="text" name="items[__IDX__][incoterm]" placeholder="FOB, CIF">
-                </div>
-                <div class="col-span-2 sm:col-span-3 lg:col-span-4">
-                    <label class="text-xs text-slate-400 mb-0.5 block">Shipping Documents</label>
-                    <div class="space-y-1" data-sdoc-rows>
-                        <div class="flex gap-1 items-center sdoc-row">
-                            <input class="{{ $inp }} flex-1" type="text" name="items[__IDX__][new_shipping_docs][0][name]" placeholder="Nama dokumen (B/L, Packing List…)">
-                            <input class="{{ $inp }} flex-1" type="file" name="items[__IDX__][new_shipping_docs][0][file]">
-                            <button type="button" onclick="addSdocRow(this,'__IDX__')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </template>
-
-    @else
-    {{-- Read-only PO list --}}
-    @forelse($contract->purchaseOrders as $po)
-    <div class="p-5 border-b border-slate-100">
-        <p class="font-semibold text-slate-800 mb-2">{{ $po->po_number }}</p>
-        <dl class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-            <div><dt class="text-slate-400 text-xs">PO Date</dt><dd>{{ $po->po_date?->format('d/m/Y') ?? '' }}</dd></div>
-            <div><dt class="text-slate-400 text-xs">Payment Term</dt><dd>{{ $po->po_payment_term ?: '' }}</dd></div>
-            <div><dt class="text-slate-400 text-xs">WIP Status</dt><dd>{{ $po->wip_status ?: '' }}</dd></div>
-            <div><dt class="text-slate-400 text-xs">Delivery Date</dt><dd>{{ $po->exact_delivery_date?->format('d/m/Y') ?? '' }}</dd></div>
-            <div><dt class="text-slate-400 text-xs">Dimension</dt><dd>{{ $po->dimension ?: '' }}</dd></div>
-            <div><dt class="text-slate-400 text-xs">Weight</dt><dd>{{ $po->weight ?: '' }}</dd></div>
-            <div><dt class="text-slate-400 text-xs">Incoterm</dt><dd>{{ $po->incoterm ?: '' }}</dd></div>
-            <div class="col-span-2"><dt class="text-slate-400 text-xs">Shipping Docs</dt><dd class="flex flex-wrap gap-x-3 gap-y-1">@foreach($po->shippingDocuments as $doc)<a href="{{ $doc->url }}" target="_blank" class="text-sky-600 hover:underline text-sm">{{ $doc->name }}</a>@endforeach{{ $po->shippingDocuments->isEmpty() ? '-' : '' }}</dd></div>
-        </dl>
-    </div>
-    @empty
-    <div class="px-6 py-4 text-center text-slate-400 text-sm">Belum ada PO</div>
-    @endforelse
-    @endif
-</div>
-
-{{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-     SECTION 5 â€” MAKER PAYMENT TERMS (one form per existing PO)
-     Note: only shown for existing POs. New POs need to be saved first.
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
-@if($contract->purchaseOrders->count() > 0)
-<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
-    <div class="px-6 py-3 border-b border-slate-100 bg-slate-50">
-        <h2 class="font-semibold text-slate-800">Maker Payment Terms</h2>
-        <p class="text-xs text-slate-400 mt-0.5">Per PO  simpan masing-masing secara terpisah</p>
-    </div>
-
-    @foreach($contract->purchaseOrders as $po)
-    <div class="border-b border-slate-100 last:border-b-0">
-        <div class="px-6 py-2 bg-slate-50 border-b border-slate-100">
-            <span class="text-sm font-medium text-slate-700">{{ $po->po_number }}</span>
-            <span class="ml-2 text-xs text-slate-400">{{ $po->makerPaymentTerms->count() }} terms</span>
-        </div>
-
-        @if($isAdmin)
-        <form method="POST" action="{{ route('contracts.purchase-orders.maker-payment-terms.upsert', [$contract, $po]) }}">
-            @csrf @method('PUT')
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="border-b border-slate-50">
-                        <tr>
-                            <th class="{{ $th }}">Term Code</th>
-                            <th class="{{ $th }}">%</th>
-                            <th class="{{ $th }}">No. Invoice</th>
-                            <th class="{{ $th }}">Tgl Invoice</th>
-                            <th class="{{ $th }}">Tgl Bayar</th>
-                            <th class="px-3 py-2 w-8"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="mpt-tbody-{{ $po->id }}">
-                    @foreach($po->makerPaymentTerms as $j => $mpt)
-                    <tr class="border-b border-slate-50 hover:bg-slate-50">
-                        <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $j }}][term_code]" value="{{ $mpt->term_code }}" placeholder="DP, P1"><input type="hidden" name="items[{{ $j }}][id]" value="{{ $mpt->id }}" data-row-id></td>
-                        <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" max="100" name="items[{{ $j }}][percentage]" value="{{ $mpt->percentage }}" placeholder="0100"></td>
-                        <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $j }}][invoice_number]" value="{{ $mpt->invoice_number }}" placeholder="INV-xxx"></td>
-                        <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[{{ $j }}][invoice_date]" value="{{ $mpt->invoice_date?->format('Y-m-d') }}"></td>
-                        <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[{{ $j }}][paid_date]" value="{{ $mpt->paid_date?->format('Y-m-d') }}"></td>
-                        <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
-                    </tr>
-                    @endforeach
-                    </tbody>
-                </table>
-            </div>
-            <div class="px-4 py-3 flex gap-2 border-t border-slate-50">
-                <button type="button"
-                    onclick="addMptRow('mpt-tbody-{{ $po->id }}','mpt-row-tpl-{{ $po->id }}',mptCounters,{{ $po->id }})"
-                    class="{{ $btnAdd }}">+ Tambah Baris</button>
-                <button type="submit" class="{{ $btnSave }}">Simpan</button>
-            </div>
-        </form>
-
-        <template id="mpt-row-tpl-{{ $po->id }}">
-            <tr class="border-b border-slate-50 hover:bg-slate-50">
-                <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][term_code]" placeholder="DP, P1"><input type="hidden" name="items[__IDX__][id]" value="" data-row-id></td>
-                <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" max="100" name="items[__IDX__][percentage]" placeholder="0100"></td>
-                <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][invoice_number]" placeholder="INV-xxx"></td>
-                <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[__IDX__][invoice_date]"></td>
-                <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[__IDX__][paid_date]"></td>
-                <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
-            </tr>
-        </template>
-
-        @else
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="border-b border-slate-50"><tr>
-                    <th class="{{ $th }}">Term</th><th class="{{ $th }}">%</th><th class="{{ $th }}">Invoice No</th><th class="{{ $th }}">Tgl Invoice</th><th class="{{ $th }}">Tgl Bayar</th>
-                </tr></thead>
-                <tbody>
-                @forelse($po->makerPaymentTerms as $mpt)
-                <tr class="border-b border-slate-50"><td class="{{ $td }}">{{ $mpt->term_code ?: '' }}</td><td class="{{ $td }}">{{ $mpt->percentage !== null ? $mpt->percentage.'%' : '' }}</td><td class="{{ $td }}">{{ $mpt->invoice_number ?: '' }}</td><td class="{{ $td }}">{{ $mpt->invoice_date?->format('d/m/Y') ?? '' }}</td><td class="{{ $td }}">{{ $mpt->paid_date?->format('d/m/Y') ?? '' }}</td></tr>
-                @empty
-                <tr><td colspan="5" class="px-4 py-3 text-center text-slate-400 text-sm">Belum ada terms</td></tr>
-                @endforelse
-                </tbody>
-            </table>
-        </div>
-        @endif
-    </div>
-    @endforeach
-</div>
-@endif
-
 {{-- ═══════════════════════════════════════════════════════════════════════
      SECTION 6 – BG NUMBERS
 ═══════════════════════════════════════════════════════════════════════ --}}
@@ -635,6 +257,408 @@
     </div>
     @endif
 </div>
+
+{{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     SECTION 2 â€” RFQs
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
+<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
+    <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+        <h2 class="font-semibold text-slate-800">Inquiry</h2>
+        <span class="text-xs text-slate-400">{{ $contract->rfqs->count() }} baris</span>
+    </div>
+
+    @if($isAdmin)
+    <form method="POST" action="{{ route('contracts.rfqs.upsert', $contract) }}">
+        @csrf @method('PUT')
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="border-b border-slate-100">
+                    <tr>
+                        <th class="{{ $th }}">Inquiry Number</th>
+                        <th class="{{ $th }}">Inquiry date</th>
+                        <th class="{{ $th }}">Maker</th>
+                        <th class="px-3 py-2 w-8"></th>
+                    </tr>
+                </thead>
+                <tbody id="rfq-tbody">
+                @foreach($contract->rfqs as $i => $rfq)
+                <tr class="border-b border-slate-50 hover:bg-slate-50">
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][rfq_number]" value="{{ $rfq->rfq_number }}" placeholder="RFQ-xxx" required><input type="hidden" name="items[{{ $i }}][id]" value="{{ $rfq->id }}" data-row-id></td>
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[{{ $i }}][rfq_date]" value="{{ $rfq->rfq_date?->format('Y-m-d') }}"></td>
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][maker]" value="{{ $rfq->maker }}" placeholder="Nama maker"></td>
+                    <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
+                </tr>
+                @endforeach
+                </tbody>
+            </table>
+        </div>
+        <div class="px-4 py-3 flex gap-2 border-t border-slate-100">
+            <button type="button" onclick="addRow('rfq-tbody','rfq-row-tpl',counters,'rfq')" class="{{ $btnAdd }}">+ Tambah Baris</button>
+            <button type="submit" class="{{ $btnSave }}">Simpan</button>
+        </div>
+    </form>
+
+    <template id="rfq-row-tpl">
+        <tr class="border-b border-slate-50 hover:bg-slate-50">
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][rfq_number]" placeholder="RFQ-xxx" required><input type="hidden" name="items[__IDX__][id]" value="" data-row-id></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[__IDX__][rfq_date]"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][maker]" placeholder="Nama maker"></td>
+            <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
+        </tr>
+    </template>
+
+    @else
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="border-b border-slate-100"><tr><th class="{{ $th }}">Inquiry Number</th><th class="{{ $th }}">Inquiry date</th><th class="{{ $th }}">Maker</th></tr></thead>
+            <tbody>
+            @forelse($contract->rfqs as $rfq)
+            <tr class="border-b border-slate-50"><td class="{{ $td }}">{{ $rfq->rfq_number }}</td><td class="{{ $td }}">{{ $rfq->rfq_date?->format('d/m/Y') ?? '' }}</td><td class="{{ $td }}">{{ $rfq->maker ?: '' }}</td></tr>
+            @empty
+            <tr><td colspan="3" class="px-4 py-4 text-center text-slate-400 text-sm">Belum ada data</td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
+    @endif
+</div>
+
+{{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     SECTION 3 â€” QUOTATIONS
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
+<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
+    <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+        <h2 class="font-semibold text-slate-800">Quotations</h2>
+        <span class="text-xs text-slate-400">{{ $contract->quotations->count() }} baris</span>
+    </div>
+
+    @if($isAdmin)
+    <form method="POST" action="{{ route('contracts.quotations.upsert', $contract) }}">
+        @csrf @method('PUT')
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="border-b border-slate-100">
+                    <tr>
+                        <th class="{{ $th }}">Quotation Number</th>
+                        <th class="{{ $th }}">Quotation Date</th>
+                        <th class="{{ $th }}">Maker Name</th>
+                        <th class="px-3 py-2 w-8"></th>
+                    </tr>
+                </thead>
+                <tbody id="quo-tbody">
+                @foreach($contract->quotations as $i => $q)
+                <tr class="border-b border-slate-50 hover:bg-slate-50">
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][quotation_number]" value="{{ $q->quotation_number }}" placeholder="QUO-xxx" required><input type="hidden" name="items[{{ $i }}][id]" value="{{ $q->id }}" data-row-id></td>
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[{{ $i }}][quotation_date]" value="{{ $q->quotation_date?->format('Y-m-d') }}"></td>
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][maker_name]" value="{{ $q->maker_name }}" placeholder="Nama maker"></td>
+                    <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
+                </tr>
+                @endforeach
+                </tbody>
+            </table>
+        </div>
+        <div class="px-4 py-3 flex gap-2 border-t border-slate-100">
+            <button type="button" onclick="addRow('quo-tbody','quo-row-tpl',counters,'quo')" class="{{ $btnAdd }}">+ Tambah Baris</button>
+            <button type="submit" class="{{ $btnSave }}">Simpan</button>
+        </div>
+    </form>
+
+    <template id="quo-row-tpl">
+        <tr class="border-b border-slate-50 hover:bg-slate-50">
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][quotation_number]" placeholder="QUO-xxx" required><input type="hidden" name="items[__IDX__][id]" value="" data-row-id></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[__IDX__][quotation_date]"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][maker_name]" placeholder="Nama maker"></td>
+            <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
+        </tr>
+    </template>
+
+    @else
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="border-b border-slate-100"><tr><th class="{{ $th }}">Quotation Number</th><th class="{{ $th }}">Date</th><th class="{{ $th }}">Maker Name</th></tr></thead>
+            <tbody>
+            @forelse($contract->quotations as $q)
+            <tr class="border-b border-slate-50"><td class="{{ $td }}">{{ $q->quotation_number }}</td><td class="{{ $td }}">{{ $q->quotation_date?->format('d/m/Y') ?? '' }}</td><td class="{{ $td }}">{{ $q->maker_name ?? '' }}</td></tr>
+            @empty
+            <tr><td colspan="3" class="px-4 py-4 text-center text-slate-400 text-sm">Belum ada data</td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
+    @endif
+</div>
+
+{{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     SECTION 4 â€” PURCHASE ORDERS (cards layout)
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
+<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
+    <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+        <h2 class="font-semibold text-slate-800">Purchase Orders</h2>
+        <span class="text-xs text-slate-400">{{ $contract->purchaseOrders->count() }} PO</span>
+    </div>
+
+    @if($isAdmin)
+    <form method="POST" action="{{ route('contracts.purchase-orders.upsert', $contract) }}" enctype="multipart/form-data">
+        @csrf @method('PUT')
+
+        <div id="po-cards" class="divide-y divide-slate-100">
+        @foreach($contract->purchaseOrders as $i => $po)
+        <div class="p-5" data-po-card>
+            {{-- Hidden ID --}}
+            <input type="hidden" name="items[{{ $i }}][id]" value="{{ $po->id }}" data-row-id>
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">PO #{{ $i + 1 }}</span>
+                <button type="button" onclick="removePoCard(this)" class="{{ $btnDel }}" title="Hapus PO ini">-</button>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-3">
+                <div class="col-span-2 sm:col-span-1">
+                    <label class="text-xs text-slate-400 mb-0.5 block">PO Number <span class="text-red-400">*</span></label>
+                    <input class="{{ $inp }}" type="text" name="items[{{ $i }}][po_number]" value="{{ $po->po_number }}" placeholder="PO-xxx" required>
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 mb-0.5 block">PO Date</label>
+                    <input class="{{ $inp }}" type="date" name="items[{{ $i }}][po_date]" value="{{ $po->po_date?->format('Y-m-d') }}">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 mb-0.5 block">WIP Status</label>
+                    <input class="{{ $inp }}" type="text" name="items[{{ $i }}][wip_status]" value="{{ $po->wip_status }}" placeholder="On Track / Late">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 mb-0.5 block">Delivery Date</label>
+                    <input class="{{ $inp }}" type="date" name="items[{{ $i }}][exact_delivery_date]" value="{{ $po->exact_delivery_date?->format('Y-m-d') }}">
+                </div>
+            </div>
+            {{-- Expedite sub-section --}}
+            <div class="rounded-lg border border-slate-100 overflow-hidden">
+                <div class="px-4 py-2 bg-slate-50 border-b border-slate-100">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Expedite</span>
+                </div>
+                <div class="p-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <div>
+                        <label class="text-xs text-slate-400 mb-0.5 block">Dimension</label>
+                        <input class="{{ $inp }}" type="text" name="items[{{ $i }}][dimension]" value="{{ $po->dimension }}" placeholder="pxlxt cm">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 mb-0.5 block">Weight</label>
+                        <input class="{{ $inp }}" type="text" name="items[{{ $i }}][weight]" value="{{ $po->weight }}" placeholder="kg">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 mb-0.5 block">Incoterm</label>
+                        <input class="{{ $inp }}" type="text" name="items[{{ $i }}][incoterm]" value="{{ $po->incoterm }}" placeholder="FOB, CIF">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 mb-0.5 block">Expedite Note</label>
+                        <input class="{{ $inp }}" type="text" name="items[{{ $i }}][expedite]" value="{{ $po->expedite }}" placeholder="Catatan expedite">
+                    </div>
+                    <div class="col-span-2 sm:col-span-3 lg:col-span-4">
+                        <label class="text-xs text-slate-400 mb-0.5 block">Shipping Documents</label>
+                        @foreach($po->shippingDocuments as $doc)
+                        <div class="flex items-center gap-2 mb-1">
+                            <input type="checkbox" name="items[{{ $i }}][delete_shipping_docs][]" value="{{ $doc->id }}" class="accent-red-500" id="del-doc-{{ $doc->id }}">
+                            <label for="del-doc-{{ $doc->id }}" class="text-xs text-red-400 cursor-pointer">Hapus</label>
+                            <a href="{{ $doc->url }}" target="_blank" class="text-xs text-sky-600 hover:underline truncate">{{ $doc->name }}</a>
+                        </div>
+                        @endforeach
+                        <div class="space-y-1" data-sdoc-rows>
+                            <div class="flex gap-1 items-center sdoc-row">
+                                <input class="{{ $inp }} flex-1" type="text" name="items[{{ $i }}][new_shipping_docs][0][name]" placeholder="Nama dokumen (B/L, Packing List…)">
+                                <input class="{{ $inp }} flex-1" type="file" name="items[{{ $i }}][new_shipping_docs][0][file]">
+                                <button type="button" onclick="addSdocRow(this,'{{ $i }}')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endforeach
+        </div>
+
+        <div class="px-5 py-3 border-t border-slate-100 flex gap-2">
+            <button type="button" onclick="addPoCard()" class="{{ $btnAdd }}">+ Tambah PO</button>
+            <button type="submit" class="{{ $btnSave }}">Simpan Semua PO</button>
+        </div>
+    </form>
+
+    {{-- Template for a new PO card --}}
+    <template id="po-card-tpl">
+        <div class="p-5 border-t border-slate-100" data-po-card>
+            <input type="hidden" name="items[__IDX__][id]" value="" data-row-id>
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">PO baru</span>
+                <button type="button" onclick="removePoCard(this)" class="{{ $btnDel }}" title="Hapus">-</button>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-3">
+                <div class="col-span-2 sm:col-span-1">
+                    <label class="text-xs text-slate-400 mb-0.5 block">PO Number <span class="text-red-400">*</span></label>
+                    <input class="{{ $inp }}" type="text" name="items[__IDX__][po_number]" placeholder="PO-xxx" required>
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 mb-0.5 block">PO Date</label>
+                    <input class="{{ $inp }}" type="date" name="items[__IDX__][po_date]">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 mb-0.5 block">WIP Status</label>
+                    <input class="{{ $inp }}" type="text" name="items[__IDX__][wip_status]" placeholder="On Track / Late">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 mb-0.5 block">Delivery Date</label>
+                    <input class="{{ $inp }}" type="date" name="items[__IDX__][exact_delivery_date]">
+                </div>
+            </div>
+            {{-- Expedite sub-section --}}
+            <div class="rounded-lg border border-slate-100 overflow-hidden">
+                <div class="px-4 py-2 bg-slate-50 border-b border-slate-100">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Expedite</span>
+                </div>
+                <div class="p-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <div>
+                        <label class="text-xs text-slate-400 mb-0.5 block">Dimension</label>
+                        <input class="{{ $inp }}" type="text" name="items[__IDX__][dimension]" placeholder="pxlxt cm">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 mb-0.5 block">Weight</label>
+                        <input class="{{ $inp }}" type="text" name="items[__IDX__][weight]" placeholder="kg">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 mb-0.5 block">Incoterm</label>
+                        <input class="{{ $inp }}" type="text" name="items[__IDX__][incoterm]" placeholder="FOB, CIF">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 mb-0.5 block">Expedite Note</label>
+                        <input class="{{ $inp }}" type="text" name="items[__IDX__][expedite]" placeholder="Catatan expedite">
+                    </div>
+                    <div class="col-span-2 sm:col-span-3 lg:col-span-4">
+                        <label class="text-xs text-slate-400 mb-0.5 block">Shipping Documents</label>
+                        <div class="space-y-1" data-sdoc-rows>
+                            <div class="flex gap-1 items-center sdoc-row">
+                                <input class="{{ $inp }} flex-1" type="text" name="items[__IDX__][new_shipping_docs][0][name]" placeholder="Nama dokumen (B/L, Packing List…)">
+                                <input class="{{ $inp }} flex-1" type="file" name="items[__IDX__][new_shipping_docs][0][file]">
+                                <button type="button" onclick="addSdocRow(this,'__IDX__')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    @else
+    {{-- Read-only PO list --}}
+    @forelse($contract->purchaseOrders as $po)
+    <div class="p-5 border-b border-slate-100">
+        <p class="font-semibold text-slate-800 mb-2">{{ $po->po_number }}</p>
+        <dl class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm mb-3">
+            <div><dt class="text-slate-400 text-xs">PO Date</dt><dd>{{ $po->po_date?->format('d/m/Y') ?? '' }}</dd></div>
+            <div><dt class="text-slate-400 text-xs">WIP Status</dt><dd>{{ $po->wip_status ?: '' }}</dd></div>
+            <div><dt class="text-slate-400 text-xs">Delivery Date</dt><dd>{{ $po->exact_delivery_date?->format('d/m/Y') ?? '' }}</dd></div>
+        </dl>
+        <div class="rounded-lg border border-slate-100 overflow-hidden">
+            <div class="px-3 py-1.5 bg-slate-50 border-b border-slate-100">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Expedite</span>
+            </div>
+            <dl class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm p-3">
+                <div><dt class="text-slate-400 text-xs">Dimension</dt><dd>{{ $po->dimension ?: '' }}</dd></div>
+                <div><dt class="text-slate-400 text-xs">Weight</dt><dd>{{ $po->weight ?: '' }}</dd></div>
+                <div><dt class="text-slate-400 text-xs">Incoterm</dt><dd>{{ $po->incoterm ?: '' }}</dd></div>
+                <div><dt class="text-slate-400 text-xs">Expedite Note</dt><dd>{{ $po->expedite ?: '' }}</dd></div>
+                <div class="col-span-2 sm:col-span-4"><dt class="text-slate-400 text-xs">Shipping Docs</dt><dd class="flex flex-wrap gap-x-3 gap-y-1 mt-0.5">@foreach($po->shippingDocuments as $doc)<a href="{{ $doc->url }}" target="_blank" class="text-sky-600 hover:underline text-sm">{{ $doc->name }}</a>@endforeach{{ $po->shippingDocuments->isEmpty() ? '-' : '' }}</dd></div>
+            </dl>
+        </div>
+    </div>
+    @empty
+    <div class="px-6 py-4 text-center text-slate-400 text-sm">Belum ada PO</div>
+    @endforelse
+    @endif
+</div>
+
+{{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     SECTION 5 â€” MAKER PAYMENT TERMS (one form per existing PO)
+     Note: only shown for existing POs. New POs need to be saved first.
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
+@if($contract->purchaseOrders->count() > 0)
+<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
+    <div class="px-6 py-3 border-b border-slate-100 bg-slate-50">
+        <h2 class="font-semibold text-slate-800">Maker Payment Terms</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Per PO  simpan masing-masing secara terpisah</p>
+    </div>
+
+    @foreach($contract->purchaseOrders as $po)
+    <div class="border-b border-slate-100 last:border-b-0">
+        <div class="px-6 py-2 bg-slate-50 border-b border-slate-100">
+            <span class="text-sm font-medium text-slate-700">{{ $po->po_number }}</span>
+            <span class="ml-2 text-xs text-slate-400">{{ $po->makerPaymentTerms->count() }} terms</span>
+        </div>
+
+        @if($isAdmin)
+        <form method="POST" action="{{ route('contracts.purchase-orders.maker-payment-terms.upsert', [$contract, $po]) }}">
+            @csrf @method('PUT')
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="border-b border-slate-50">
+                        <tr>
+                            <th class="{{ $th }}">Term Code</th>
+                            <th class="{{ $th }}">%</th>
+                            <th class="{{ $th }}">No. Invoice</th>
+                            <th class="{{ $th }}">Tgl Invoice</th>
+                            <th class="{{ $th }}">Tgl Bayar</th>
+                            <th class="px-3 py-2 w-8"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="mpt-tbody-{{ $po->id }}">
+                    @foreach($po->makerPaymentTerms as $j => $mpt)
+                    <tr class="border-b border-slate-50 hover:bg-slate-50">
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $j }}][term_code]" value="{{ $mpt->term_code }}" placeholder="DP, P1"><input type="hidden" name="items[{{ $j }}][id]" value="{{ $mpt->id }}" data-row-id></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" max="100" name="items[{{ $j }}][percentage]" value="{{ $mpt->percentage }}" placeholder="0100"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $j }}][invoice_number]" value="{{ $mpt->invoice_number }}" placeholder="INV-xxx"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[{{ $j }}][invoice_date]" value="{{ $mpt->invoice_date?->format('Y-m-d') }}"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[{{ $j }}][paid_date]" value="{{ $mpt->paid_date?->format('Y-m-d') }}"></td>
+                        <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
+                    </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="px-4 py-3 flex gap-2 border-t border-slate-50">
+                <button type="button"
+                    onclick="addMptRow('mpt-tbody-{{ $po->id }}','mpt-row-tpl-{{ $po->id }}',mptCounters,{{ $po->id }})"
+                    class="{{ $btnAdd }}">+ Tambah Baris</button>
+                <button type="submit" class="{{ $btnSave }}">Simpan</button>
+            </div>
+        </form>
+
+        <template id="mpt-row-tpl-{{ $po->id }}">
+            <tr class="border-b border-slate-50 hover:bg-slate-50">
+                <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][term_code]" placeholder="DP, P1"><input type="hidden" name="items[__IDX__][id]" value="" data-row-id></td>
+                <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" max="100" name="items[__IDX__][percentage]" placeholder="0100"></td>
+                <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][invoice_number]" placeholder="INV-xxx"></td>
+                <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[__IDX__][invoice_date]"></td>
+                <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[__IDX__][paid_date]"></td>
+                <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
+            </tr>
+        </template>
+
+        @else
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="border-b border-slate-50"><tr>
+                    <th class="{{ $th }}">Term</th><th class="{{ $th }}">%</th><th class="{{ $th }}">Invoice No</th><th class="{{ $th }}">Tgl Invoice</th><th class="{{ $th }}">Tgl Bayar</th>
+                </tr></thead>
+                <tbody>
+                @forelse($po->makerPaymentTerms as $mpt)
+                <tr class="border-b border-slate-50"><td class="{{ $td }}">{{ $mpt->term_code ?: '' }}</td><td class="{{ $td }}">{{ $mpt->percentage !== null ? $mpt->percentage.'%' : '' }}</td><td class="{{ $td }}">{{ $mpt->invoice_number ?: '' }}</td><td class="{{ $td }}">{{ $mpt->invoice_date?->format('d/m/Y') ?? '' }}</td><td class="{{ $td }}">{{ $mpt->paid_date?->format('d/m/Y') ?? '' }}</td></tr>
+                @empty
+                <tr><td colspan="5" class="px-4 py-3 text-center text-slate-400 text-sm">Belum ada terms</td></tr>
+                @endforelse
+                </tbody>
+            </table>
+        </div>
+        @endif
+    </div>
+    @endforeach
+</div>
+@endif
+
+
 
 @endsection
 

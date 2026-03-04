@@ -80,6 +80,7 @@ class ContractController extends Controller
                 'dimension'           => $item['dimension'] ?? null,
                 'weight'              => $item['weight'] ?? null,
                 'incoterm'            => $item['incoterm'] ?? null,
+                'expedite'            => $item['expedite'] ?? null,
             ]);
             foreach ($item['maker_payment_terms'] ?? [] as $mpt) {
                 $po->makerPaymentTerms()->create([
@@ -238,6 +239,7 @@ class ContractController extends Controller
                 'dimension'           => $item['dimension'] ?? null,
                 'weight'              => $item['weight'] ?? null,
                 'incoterm'            => $item['incoterm'] ?? null,
+                'expedite'            => $item['expedite'] ?? null,
             ];
             if ($id) {
                 $contract->purchaseOrders()->where('id', $id)->update($poData);

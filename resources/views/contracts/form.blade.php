@@ -44,9 +44,10 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
                     <input class="{{ $inp }}" name="buyer_name" value="{{ old('buyer_name', $contract->buyer_name) }}" placeholder="PT. Example">
                 </div>
             </div>
+            <h6 class="font-semibold"> Inquiry </h6>
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div>
-                    <label class="block text-sm font-medium mb-1">RFQ From Buyer</label>
+                    <label class="block text-sm font-medium mb-1">Inquiry From Buyer</label>
                     <input class="{{ $inp }}" type="date" name="rfq_from_buyer" value="{{ old('rfq_from_buyer', optional($contract->rfq_from_buyer)->format('Y-m-d')) }}">
                 </div>
                 <div>
@@ -219,8 +220,8 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
             <table class="w-full text-sm">
                 <thead class="border-b border-slate-100">
                     <tr>
-                        <th class="{{ $th }}">RFQ Number</th>
-                        <th class="{{ $th }}">RFQ Date</th>
+                        <th class="{{ $th }}">Inquiry Number</th>
+                        <th class="{{ $th }}">Inquiry Date</th>
                         <th class="{{ $th }}">Maker</th>
                         <th class="w-10"></th>
                     </tr>
@@ -311,32 +312,40 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
                     <button type="button" onclick="removePoCard(this,'po-cards','po-empty-msg')" class="{{ $btnDel }}">×</button>
                 </div>
                 <input type="hidden" name="purchase_orders[{{ $pi }}][id]" value="{{ $po->id }}">
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-3">
                     <div class="col-span-2 sm:col-span-1">
                         <label class="text-xs text-slate-400 mb-0.5 block">PO Number <span class="text-red-400">*</span></label>
                         <input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][po_number]" value="{{ $po->po_number }}" placeholder="PO-xxx" required>
                     </div>
                     <div><label class="text-xs text-slate-400 mb-0.5 block">PO Date</label><input class="{{ $inp }}" type="date" name="purchase_orders[{{ $pi }}][po_date]" value="{{ optional($po->po_date)->format('Y-m-d') }}"></div>
-                    <!-- <div><label class="text-xs text-slate-400 mb-0.5 block">Payment Term</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][po_payment_term]" value="{{ $po->po_payment_term }}" placeholder="30 hari"></div> -->
                     <div><label class="text-xs text-slate-400 mb-0.5 block">WIP Status</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][wip_status]" value="{{ $po->wip_status }}" placeholder="On Track "></div>
                     <div><label class="text-xs text-slate-400 mb-0.5 block">Delivery Date</label><input class="{{ $inp }}" type="date" name="purchase_orders[{{ $pi }}][exact_delivery_date]" value="{{ optional($po->exact_delivery_date)->format('Y-m-d') }}"></div>
-                    <div><label class="text-xs text-slate-400 mb-0.5 block">Dimension</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][dimension]" value="{{ $po->dimension }}" placeholder="pxlxt cm"></div>
-                    <div><label class="text-xs text-slate-400 mb-0.5 block">Weight</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][weight]" value="{{ $po->weight }}" placeholder="kg"></div>
-                    <div><label class="text-xs text-slate-400 mb-0.5 block">Incoterm</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][incoterm]" value="{{ $po->incoterm }}" placeholder="FOB, CIF "></div>
-                    <div class="col-span-2 sm:col-span-3 lg:col-span-4">
-                        <label class="text-xs text-slate-400 mb-0.5 block">Shipping Documents</label>
-                        @foreach($po->shippingDocuments as $doc)
-                        <div class="flex items-center gap-2 mb-1">
-                            <input type="checkbox" name="purchase_orders[{{ $pi }}][delete_shipping_docs][]" value="{{ $doc->id }}" class="accent-red-500" id="fdel-doc-{{ $doc->id }}">
-                            <label for="fdel-doc-{{ $doc->id }}" class="text-xs text-red-400 cursor-pointer">Hapus</label>
-                            <a href="{{ $doc->url }}" target="_blank" class="text-xs text-sky-600 hover:underline truncate">{{ $doc->name }}</a>
-                        </div>
-                        @endforeach
-                        <div class="space-y-1" data-sdoc-rows>
-                            <div class="flex gap-1 items-center sdoc-row">
-                                <input class="{{ $inp }} flex-1" type="text" name="purchase_orders[{{ $pi }}][new_shipping_docs][0][name]" placeholder="Nama dokumen (B/L, Packing List…)">
-                                <input class="{{ $inp }} flex-1" type="file" name="purchase_orders[{{ $pi }}][new_shipping_docs][0][file]">
-                                <button type="button" onclick="addSdocRowForm(this,'{{ $pi }}')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+</button>
+                </div>
+                {{-- Expedite sub-section --}}
+                <div class="rounded-lg border border-slate-100 overflow-hidden mb-4">
+                    <div class="px-4 py-2 bg-slate-50 border-b border-slate-100">
+                        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Expedite</span>
+                    </div>
+                    <div class="p-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <div><label class="text-xs text-slate-400 mb-0.5 block">Dimension</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][dimension]" value="{{ $po->dimension }}" placeholder="pxlxt cm"></div>
+                        <div><label class="text-xs text-slate-400 mb-0.5 block">Weight</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][weight]" value="{{ $po->weight }}" placeholder="kg"></div>
+                        <div><label class="text-xs text-slate-400 mb-0.5 block">Incoterm</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][incoterm]" value="{{ $po->incoterm }}" placeholder="FOB, CIF "></div>
+                        <div><label class="text-xs text-slate-400 mb-0.5 block">Expedite Note</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][expedite]" value="{{ $po->expedite }}" placeholder="Catatan expedite"></div>
+                        <div class="col-span-2 sm:col-span-3 lg:col-span-4">
+                            <label class="text-xs text-slate-400 mb-0.5 block">Shipping Documents</label>
+                            @foreach($po->shippingDocuments as $doc)
+                            <div class="flex items-center gap-2 mb-1">
+                                <input type="checkbox" name="purchase_orders[{{ $pi }}][delete_shipping_docs][]" value="{{ $doc->id }}" class="accent-red-500" id="fdel-doc-{{ $doc->id }}">
+                                <label for="fdel-doc-{{ $doc->id }}" class="text-xs text-red-400 cursor-pointer">Hapus</label>
+                                <a href="{{ $doc->url }}" target="_blank" class="text-xs text-sky-600 hover:underline truncate">{{ $doc->name }}</a>
+                            </div>
+                            @endforeach
+                            <div class="space-y-1" data-sdoc-rows>
+                                <div class="flex gap-1 items-center sdoc-row">
+                                    <input class="{{ $inp }} flex-1" type="text" name="purchase_orders[{{ $pi }}][new_shipping_docs][0][name]" placeholder="Nama dokumen (B/L, Packing List…)">
+                                    <input class="{{ $inp }} flex-1" type="file" name="purchase_orders[{{ $pi }}][new_shipping_docs][0][file]">
+                                    <button type="button" onclick="addSdocRowForm(this,'{{ $pi }}')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -391,25 +400,33 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
                 <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">PO Baru</span>
                 <button type="button" onclick="removePoCard(this,'po-cards','po-empty-msg')" class="{{ $btnDel }}">×</button>
             </div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-3">
                 <div class="col-span-2 sm:col-span-1">
                     <label class="text-xs text-slate-400 mb-0.5 block">PO Number <span class="text-red-400">*</span></label>
                     <input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][po_number]" placeholder="PO-xxx" required>
                 </div>
                 <div><label class="text-xs text-slate-400 mb-0.5 block">PO Date</label><input class="{{ $inp }}" type="date" name="purchase_orders[__PO__][po_date]"></div>
-                <div><label class="text-xs text-slate-400 mb-0.5 block">Payment Term</label><input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][po_payment_term]" placeholder="30 hari"></div>
                 <div><label class="text-xs text-slate-400 mb-0.5 block">WIP Status</label><input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][wip_status]" placeholder="On Track"></div>
                 <div><label class="text-xs text-slate-400 mb-0.5 block">Delivery Date</label><input class="{{ $inp }}" type="date" name="purchase_orders[__PO__][exact_delivery_date]"></div>
-                <div><label class="text-xs text-slate-400 mb-0.5 block">Dimension</label><input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][dimension]" placeholder="pxlxt cm"></div>
-                <div><label class="text-xs text-slate-400 mb-0.5 block">Weight</label><input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][weight]" placeholder="kg"></div>
-                <div><label class="text-xs text-slate-400 mb-0.5 block">Incoterm</label><input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][incoterm]" placeholder="FOB, CIF "></div>
-                <div class="col-span-2 sm:col-span-3 lg:col-span-4">
-                    <label class="text-xs text-slate-400 mb-0.5 block">Shipping Documents</label>
-                    <div class="space-y-1" data-sdoc-rows>
-                        <div class="flex gap-1 items-center sdoc-row">
-                            <input class="{{ $inp }} flex-1" type="text" name="purchase_orders[__PO__][new_shipping_docs][0][name]" placeholder="Nama dokumen (B/L, Packing List…)">
-                            <input class="{{ $inp }} flex-1" type="file" name="purchase_orders[__PO__][new_shipping_docs][0][file]">
-                            <button type="button" onclick="addSdocRowForm(this,'__PO__')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+</button>
+            </div>
+            {{-- Expedite sub-section --}}
+            <div class="rounded-lg border border-slate-100 overflow-hidden mb-4">
+                <div class="px-4 py-2 bg-slate-50 border-b border-slate-100">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Expedite</span>
+                </div>
+                <div class="p-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <div><label class="text-xs text-slate-400 mb-0.5 block">Dimension</label><input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][dimension]" placeholder="pxlxt cm"></div>
+                    <div><label class="text-xs text-slate-400 mb-0.5 block">Weight</label><input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][weight]" placeholder="kg"></div>
+                    <div><label class="text-xs text-slate-400 mb-0.5 block">Incoterm</label><input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][incoterm]" placeholder="FOB, CIF "></div>
+                    <div><label class="text-xs text-slate-400 mb-0.5 block">Expedite Note</label><input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][expedite]" placeholder="Catatan expedite"></div>
+                    <div class="col-span-2 sm:col-span-3 lg:col-span-4">
+                        <label class="text-xs text-slate-400 mb-0.5 block">Shipping Documents</label>
+                        <div class="space-y-1" data-sdoc-rows>
+                            <div class="flex gap-1 items-center sdoc-row">
+                                <input class="{{ $inp }} flex-1" type="text" name="purchase_orders[__PO__][new_shipping_docs][0][name]" placeholder="Nama dokumen (B/L, Packing List…)">
+                                <input class="{{ $inp }} flex-1" type="file" name="purchase_orders[__PO__][new_shipping_docs][0][file]">
+                                <button type="button" onclick="addSdocRowForm(this,'__PO__')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+</button>
+                            </div>
                         </div>
                     </div>
                 </div>
