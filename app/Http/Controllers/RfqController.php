@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Contract;
+use App\Models\Quotation;
 use App\Models\Rfq;
 use Illuminate\Http\Request;
 
@@ -11,9 +12,12 @@ class RfqController extends Controller
     public function upsert(Request $request, Contract $contract)
     {
         $items = $request->input('items', []);
+        $quotations = $request->input('quotations', []);
+        $rfqMakerByIndex = [];
 
-        foreach ($items as $item) {
+        foreach ($items as $index => $item) {
             $id = $item['id'] ?? null;
+            $rfqMakerByIndex[$index] = $item['maker'] ?? null;
 
             if (!empty($item['_delete'])) {
                 if ($id) Rfq::where('id', $id)->where('contract_id', $contract->id)->delete();
@@ -35,6 +39,29 @@ class RfqController extends Controller
             }
         }
 
-        return redirect()->route('contracts.show', $contract)->with('success', 'RFQ berhasil disimpan.');
+        foreach ($quotations as $index => $item) {
+            $id = $item['id'] ?? null;
+
+            if (!empty($item['_delete'])) {
+                if ($id) Quotation::where('id', $id)->where('contract_id', $contract->id)->delete();
+                continue;
+            }
+
+            $data = [
+                'quotation_number' => $item['quotation_number'] ?? null,
+                'quotation_date'   => $item['quotation_date'] ?: null,
+                'maker_name'       => $item['maker_name'] ?? $rfqMakerByIndex[$index] ?? null,
+            ];
+
+            if (empty($data['quotation_number'])) continue;
+
+            if ($id) {
+                Quotation::where('id', $id)->where('contract_id', $contract->id)->update($data);
+            } else {
+                $contract->quotations()->create($data);
+            }
+        }
+
+        return redirect()->route('contracts.show', $contract)->with('success', 'Inquiry & Quotation berhasil disimpan.');
     }
 }

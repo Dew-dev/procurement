@@ -14,7 +14,9 @@ class Contract extends Model
         'contract_number',
         'buyer_name',
         'rfq_from_buyer',
+        'rfq_number',
         'quotation_to_buyer',
+        'quotation_number',
         'contract_date',
         'delivery_date',
     ];

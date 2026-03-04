@@ -11,8 +11,10 @@ class PurchaseOrder extends Model
 {
     use HasFactory;
 
+
     protected $fillable = [
         'contract_id',
+        'rfq_id',
         'po_number',
         'po_date',
         'po_payment_term',
@@ -37,6 +39,11 @@ class PurchaseOrder extends Model
         return $this->belongsTo(Contract::class);
     }
 
+    public function rfq(): BelongsTo
+    {
+        return $this->belongsTo(Rfq::class);
+    }
+
     public function makerPaymentTerms(): HasMany
     {
         return $this->hasMany(MakerPaymentTerm::class, 'po_id');
@@ -45,5 +52,40 @@ class PurchaseOrder extends Model
     public function shippingDocuments(): HasMany
     {
         return $this->hasMany(ShippingDocument::class);
+    }
+
+    public function wipStatuses(): HasMany
+    {
+        return $this->hasMany(PurchaseOrderWipStatus::class)->orderBy('percentage');
+    }
+
+    public function syncWipStatuses(?array $payload): void
+    {
+        if ($payload === null) {
+            return;
+        }
+
+        // payload is a list of {percentage, status_date} items
+        $seen = [];
+        foreach ($payload as $row) {
+            $percentage = (int) ($row['percentage'] ?? 0);
+            $date       = ($row['status_date'] ?? '') ?: null;
+            if ($percentage <= 0) continue;
+
+            if ($date) {
+                $this->wipStatuses()->updateOrCreate(
+                    ['percentage' => $percentage],
+                    ['status_date' => $date]
+                );
+            }
+            $seen[] = $percentage;
+        }
+
+        // Remove rows that were deleted
+        if (count($seen)) {
+            $this->wipStatuses()->whereNotIn('percentage', $seen)->delete();
+        } else {
+            $this->wipStatuses()->delete();
+        }
     }
 }

@@ -30,7 +30,9 @@ class ContractController extends Controller
             'contract_number'    => ['required', 'string', 'max:100', 'unique:contracts,contract_number'],
             'buyer_name'         => ['nullable', 'string', 'max:150'],
             'rfq_from_buyer'     => ['nullable', 'date'],
+            'rfq_number'         => ['nullable', 'string', 'max:100'],
             'quotation_to_buyer' => ['nullable', 'date'],
+            'quotation_number'   => ['nullable', 'string', 'max:100'],
             'contract_date'      => ['nullable', 'date'],
             'delivery_date'      => ['nullable', 'date'],
         ]);
@@ -48,30 +50,40 @@ class ContractController extends Controller
             ]);
         }
 
+        $rfqMakerByIndex = [];
+        $rfqIndexToId    = [];
+
         // RFQs
-        foreach ($request->input('rfqs', []) as $item) {
+        foreach ($request->input('rfqs', []) as $index => $item) {
+            $rfqMakerByIndex[$index] = $item['maker'] ?? null;
             if (empty($item['rfq_number'])) continue;
-            $contract->rfqs()->create([
+            $rfq = $contract->rfqs()->create([
                 'rfq_number' => $item['rfq_number'],
                 'rfq_date'   => ($item['rfq_date'] ?? '') ?: null,
                 'maker'      => $item['maker'] ?? null,
             ]);
+            $rfqIndexToId[$index] = $rfq->id;
         }
 
         // Quotations
-        foreach ($request->input('quotations', []) as $item) {
+        foreach ($request->input('quotations', []) as $index => $item) {
             if (empty($item['quotation_number'])) continue;
             $contract->quotations()->create([
                 'quotation_number' => $item['quotation_number'],
                 'quotation_date'   => ($item['quotation_date'] ?? '') ?: null,
-                'maker_name'       => $item['maker_name'] ?? null,
+                'maker_name'       => $item['maker_name'] ?? $rfqMakerByIndex[$index] ?? null,
             ]);
         }
 
         // Purchase Orders + their Maker Payment Terms
         foreach ($request->input('purchase_orders', []) as $pi => $item) {
             if (empty($item['po_number'])) continue;
+            $rfqIdRaw = ($item['rfq_id'] ?? '') ?: '';
+            $rfqId    = $rfqIdRaw !== '' && str_starts_with($rfqIdRaw, '~')
+                ? ($rfqIndexToId[(int) ltrim($rfqIdRaw, '~')] ?? null)
+                : ($rfqIdRaw !== '' ? (int) $rfqIdRaw : null);
             $po = $contract->purchaseOrders()->create([
+                'rfq_id'              => $rfqId,
                 'po_number'           => $item['po_number'],
                 'po_date'             => ($item['po_date'] ?? '') ?: null,
                 'po_payment_term'     => $item['po_payment_term'] ?? null,
@@ -82,6 +94,7 @@ class ContractController extends Controller
                 'incoterm'            => $item['incoterm'] ?? null,
                 'expedite'            => $item['expedite'] ?? null,
             ]);
+            $po->syncWipStatuses($item['wip_statuses'] ?? null);
             foreach ($item['maker_payment_terms'] ?? [] as $mpt) {
                 $po->makerPaymentTerms()->create([
                     'term_code'      => $mpt['term_code'] ?? null,
@@ -131,8 +144,10 @@ class ContractController extends Controller
         $contract->load([
             'rfqs',
             'quotations',
+            'purchaseOrders.rfq',
             'purchaseOrders.makerPaymentTerms',
             'purchaseOrders.shippingDocuments',
+            'purchaseOrders.wipStatuses',
             'contractPaymentTerms',
             'bgNumbers',
             'suretyBonds',
@@ -143,7 +158,17 @@ class ContractController extends Controller
 
     public function edit(Contract $contract)
     {
-        $contract->load(['rfqs', 'quotations', 'purchaseOrders.makerPaymentTerms', 'purchaseOrders.shippingDocuments', 'contractPaymentTerms', 'bgNumbers', 'suretyBonds']);
+        $contract->load([
+            'rfqs',
+            'quotations',
+            'purchaseOrders.rfq',
+            'purchaseOrders.makerPaymentTerms',
+            'purchaseOrders.shippingDocuments',
+            'purchaseOrders.wipStatuses',
+            'contractPaymentTerms',
+            'bgNumbers',
+            'suretyBonds',
+        ]);
 
         return view('contracts.form', [
             'contract' => $contract,
@@ -157,7 +182,9 @@ class ContractController extends Controller
             'contract_number'    => ['required', 'string', 'max:100', Rule::unique('contracts', 'contract_number')->ignore($contract->id)],
             'buyer_name'         => ['nullable', 'string', 'max:150'],
             'rfq_from_buyer'     => ['nullable', 'date'],
+            'rfq_number'         => ['nullable', 'string', 'max:100'],
             'quotation_to_buyer' => ['nullable', 'date'],
+            'quotation_number'   => ['nullable', 'string', 'max:100'],
             'contract_date'      => ['nullable', 'date'],
             'delivery_date'      => ['nullable', 'date'],
         ]);
@@ -187,8 +214,11 @@ class ContractController extends Controller
 
         // ── RFQs (sync) ──────────────────────────────────────────────────
         $submittedRfqIds = [];
-        foreach ($request->input('rfqs', []) as $item) {
+        $rfqMakerByIndex = [];
+        $rfqIndexToId    = [];
+        foreach ($request->input('rfqs', []) as $index => $item) {
             $id = $item['id'] ?? null;
+            $rfqMakerByIndex[$index] = $item['maker'] ?? null;
             if (!$id && empty($item['rfq_number'])) continue;
             $rfqData = [
                 'rfq_number' => $item['rfq_number'],
@@ -197,23 +227,25 @@ class ContractController extends Controller
             ];
             if ($id) {
                 $contract->rfqs()->where('id', $id)->update($rfqData);
-                $submittedRfqIds[] = (int) $id;
+                $submittedRfqIds[]    = (int) $id;
+                $rfqIndexToId[$index] = (int) $id;
             } else {
                 $new = $contract->rfqs()->create($rfqData);
-                $submittedRfqIds[] = $new->id;
+                $submittedRfqIds[]    = $new->id;
+                $rfqIndexToId[$index] = $new->id;
             }
         }
         $contract->rfqs()->whereNotIn('id', $submittedRfqIds ?: [0])->delete();
 
         // ── Quotations (sync) ────────────────────────────────────────────
         $submittedQuoIds = [];
-        foreach ($request->input('quotations', []) as $item) {
+        foreach ($request->input('quotations', []) as $index => $item) {
             $id = $item['id'] ?? null;
             if (!$id && empty($item['quotation_number'])) continue;
             $quoData = [
                 'quotation_number' => $item['quotation_number'],
                 'quotation_date'   => ($item['quotation_date'] ?? '') ?: null,
-                'maker_name'       => $item['maker_name'] ?? null,
+                'maker_name'       => $item['maker_name'] ?? $rfqMakerByIndex[$index] ?? null,
             ];
             if ($id) {
                 $contract->quotations()->where('id', $id)->update($quoData);
@@ -230,7 +262,12 @@ class ContractController extends Controller
         foreach ($request->input('purchase_orders', []) as $pi => $item) {
             $id = $item['id'] ?? null;
             if (!$id && empty($item['po_number'])) continue;
+            $rfqIdRaw = ($item['rfq_id'] ?? '') ?: '';
+            $rfqId    = $rfqIdRaw !== '' && str_starts_with($rfqIdRaw, '~')
+                ? ($rfqIndexToId[(int) ltrim($rfqIdRaw, '~')] ?? null)
+                : ($rfqIdRaw !== '' ? (int) $rfqIdRaw : null);
             $poData = [
+                'rfq_id'              => $rfqId,
                 'po_number'           => $item['po_number'],
                 'po_date'             => ($item['po_date'] ?? '') ?: null,
                 'po_payment_term'     => $item['po_payment_term'] ?? null,
@@ -249,6 +286,7 @@ class ContractController extends Controller
                 $po = $contract->purchaseOrders()->create($poData);
                 $submittedPoIds[] = $po->id;
             }
+            $po?->syncWipStatuses($item['wip_statuses'] ?? null);
             // Upsert MPTs for this PO
             $submittedMptIds = [];
             foreach ($item['maker_payment_terms'] ?? [] as $mpt) {

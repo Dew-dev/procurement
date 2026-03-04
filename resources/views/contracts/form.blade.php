@@ -17,6 +17,20 @@ $existingQuos = $isEdit ? $contract->quotations : collect();
 $existingPos = $isEdit ? $contract->purchaseOrders : collect();
 $existingBgs = $isEdit ? $contract->bgNumbers : collect();
 $existingSbs = $isEdit ? $contract->suretyBonds : collect();
+// Pair RFQs & Quotations by maker (case-insensitive), fallback to index pairing
+$rfqsByMaker  = $existingRfqs->groupBy(fn($r) => strtolower(trim($r->maker ?? '')));
+$quosByMaker  = $existingQuos->groupBy(fn($q) => strtolower(trim($q->maker_name ?? '')));
+$allMakerKeys = $rfqsByMaker->keys()->merge($quosByMaker->keys())->unique()->values();
+$iqRows = collect();
+foreach ($allMakerKeys as $mk) {
+    $mRfqs = $rfqsByMaker->get($mk, collect());
+    $mQuos = $quosByMaker->get($mk, collect());
+    foreach (range(0, max($mRfqs->count(), $mQuos->count()) - 1) as $j) {
+        $iqRows->push(['rfq' => $mRfqs->get($j), 'quo' => $mQuos->get($j)]);
+    }
+}
+$iqRowCount = $iqRows->count();
+$posByRfq = $existingPos->groupBy('rfq_id');
 @endphp
 
 <h1 class="text-2xl font-semibold mb-6">{{ $isEdit ? 'Edit Contract' : 'Tambah Contract' }}</h1>
@@ -44,15 +58,23 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
                     <input class="{{ $inp }}" name="buyer_name" value="{{ old('buyer_name', $contract->buyer_name) }}" placeholder="PT. Example">
                 </div>
             </div>
-            <h6 class="font-semibold"> Inquiry </h6>
+            <h6 class="font-semibold"> Inquiry to Maker</h6>
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div>
-                    <label class="block text-sm font-medium mb-1">Inquiry From Buyer</label>
+                    <label class="block text-sm font-medium mb-1">Inquiry From Buyer Date</label>
                     <input class="{{ $inp }}" type="date" name="rfq_from_buyer" value="{{ old('rfq_from_buyer', optional($contract->rfq_from_buyer)->format('Y-m-d')) }}">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium mb-1">Quotation To Buyer</label>
+                    <label class="block text-sm font-medium mb-1">Inquiry From Buyer Number</label>
+                    <input class="{{ $inp }}" type="text" name="rfq_number" value="{{ old('rfq_number', $contract->rfq_number) }}" placeholder="INQ-xxx">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Quotation To Buyer Date</label>
                     <input class="{{ $inp }}" type="date" name="quotation_to_buyer" value="{{ old('quotation_to_buyer', optional($contract->quotation_to_buyer)->format('Y-m-d')) }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Quotation To Buyer Number</label>
+                    <input class="{{ $inp }}" type="text" name="quotation_number" value="{{ old('quotation_number', $contract->quotation_number) }}" placeholder="QUO-xxx">
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Contract Date</label>
@@ -210,91 +232,74 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
         </tr>
     </template>
 
-    {{-- RFQs --}}
+    {{-- INQUIRY & QUOTATION --}}
     <div class="{{ $section }}">
         <div class="{{ $secHead }}">
-            <h2 class="font-semibold text-slate-800">Inquiry</h2>
-            <button type="button" onclick="addRow('rfq-tbody','rfq-tpl',ctrs,'rfq')" class="{{ $btnAdd }}">+ Tambah</button>
+            <h2 class="font-semibold text-slate-800">Inquiry &amp; Quotation</h2>
+            <button type="button" onclick="addRow('iq-tbody','iq-row-tpl',ctrs,'iq')" class="{{ $btnAdd }}">+ Tambah</button>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead class="border-b border-slate-100">
                     <tr>
+                        <th class="{{ $th }}">Maker</th>
                         <th class="{{ $th }}">Inquiry Number</th>
                         <th class="{{ $th }}">Inquiry Date</th>
-                        <th class="{{ $th }}">Maker</th>
-                        <th class="w-10"></th>
-                    </tr>
-                </thead>
-                <tbody id="rfq-tbody">
-                    @foreach($existingRfqs as $i => $rfq)
-                    <tr class="border-b border-slate-50 hover:bg-slate-50">
-                        <td class="{{ $td }}">
-                            <input type="hidden" name="rfqs[{{ $i }}][id]" value="{{ $rfq->id }}">
-                            <input class="{{ $inp }}" type="text" name="rfqs[{{ $i }}][rfq_number]" value="{{ $rfq->rfq_number }}" placeholder="RFQ-xxx">
-                        </td>
-                        <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="rfqs[{{ $i }}][rfq_date]" value="{{ optional($rfq->rfq_date)->format('Y-m-d') }}"></td>
-                        <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="rfqs[{{ $i }}][maker]" value="{{ $rfq->maker }}" placeholder="Nama maker"></td>
-                        <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'rfq-tbody','rfq-empty-msg')" class="{{ $btnDel }}">×</button></td>
-                    </tr>
-                    @endforeach
-                    <tr class="border-b border-slate-50" id="rfq-empty-msg" {{ $existingRfqs->isNotEmpty() ? ' style="display:none"' : '' }}>
-                        <td colspan="4" class="px-3 py-3 text-center text-slate-400 text-sm italic">Klik "+ Tambah" untuk menambah baris</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    <template id="rfq-tpl">
-        <tr class="border-b border-slate-50 hover:bg-slate-50">
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="rfqs[__IDX__][rfq_number]" placeholder="RFQ-xxx"></td>
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="rfqs[__IDX__][rfq_date]"></td>
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="rfqs[__IDX__][maker]" placeholder="Nama maker"></td>
-            <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'rfq-tbody','rfq-empty-msg')" class="{{ $btnDel }}">×</button></td>
-        </tr>
-    </template>
-
-    {{-- QUOTATIONS --}}
-    <div class="{{ $section }}">
-        <div class="{{ $secHead }}">
-            <h2 class="font-semibold text-slate-800">Quotations</h2>
-            <button type="button" onclick="addRow('quo-tbody','quo-tpl',ctrs,'quo')" class="{{ $btnAdd }}">+ Tambah</button>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="border-b border-slate-100">
-                    <tr>
                         <th class="{{ $th }}">Quotation Number</th>
                         <th class="{{ $th }}">Quotation Date</th>
-                        <th class="{{ $th }}">Maker Name</th>
+                        <th class="{{ $th }}">PO Terkait</th>
                         <th class="w-10"></th>
                     </tr>
                 </thead>
-                <tbody id="quo-tbody">
-                    @foreach($existingQuos as $i => $quo)
-                    <tr class="border-b border-slate-50 hover:bg-slate-50">
+                <tbody id="iq-tbody">
+                    @foreach($iqRows as $i => $iqRow)
+                    @php
+                        $rfq = $iqRow['rfq'];
+                        $quo = $iqRow['quo'];
+                        $makerValue = optional($rfq)->maker ?? optional($quo)->maker_name ?? '';
+                        $makerToken = 'iq-' . $i;
+                        $linkedPos = $rfq ? ($posByRfq->get($rfq->id) ?? collect()) : collect();
+                    @endphp
+                    <tr class="border-b border-slate-50 hover:bg-slate-50" data-maker-row>
                         <td class="{{ $td }}">
-                            <input type="hidden" name="quotations[{{ $i }}][id]" value="{{ $quo->id }}">
-                            <input class="{{ $inp }}" type="text" name="quotations[{{ $i }}][quotation_number]" value="{{ $quo->quotation_number }}" placeholder="QUO-xxx">
+                            <input class="{{ $inp }}" type="text" name="rfqs[{{ $i }}][maker]" value="{{ $makerValue }}" placeholder="Nama maker" data-maker-sync="{{ $makerToken }}">
+                            <input type="hidden" name="rfqs[{{ $i }}][id]" value="{{ optional($rfq)->id }}">
+                            <input type="hidden" name="quotations[{{ $i }}][id]" value="{{ optional($quo)->id }}">
+                            <input type="hidden" name="quotations[{{ $i }}][maker_name]" value="{{ optional($quo)->maker_name ?? $makerValue }}" data-maker-sync-target="{{ $makerToken }}">
                         </td>
-                        <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="quotations[{{ $i }}][quotation_date]" value="{{ optional($quo->quotation_date)->format('Y-m-d') }}"></td>
-                        <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="quotations[{{ $i }}][maker_name]" value="{{ $quo->maker_name }}" placeholder="Nama maker"></td>
-                        <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'quo-tbody','quo-empty-msg')" class="{{ $btnDel }}">×</button></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="rfqs[{{ $i }}][rfq_number]" value="{{ optional($rfq)->rfq_number }}" placeholder="INQ-xxx"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="rfqs[{{ $i }}][rfq_date]" value="{{ optional(optional($rfq)->rfq_date)->format('Y-m-d') }}"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="quotations[{{ $i }}][quotation_number]" value="{{ optional($quo)->quotation_number }}" placeholder="QUO-xxx"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="quotations[{{ $i }}][quotation_date]" value="{{ optional(optional($quo)->quotation_date)->format('Y-m-d') }}"></td>
+                        <td class="{{ $td }}">
+                            @forelse($linkedPos as $lpo)
+                            <span class="inline-block px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 text-xs font-medium mr-1 mb-0.5">{{ $lpo->po_number }}</span>
+                            @empty<span class="text-slate-300 text-xs">—</span>@endforelse
+                        </td>
+                        <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'iq-tbody','iq-empty-msg')" class="{{ $btnDel }}">×</button></td>
                     </tr>
                     @endforeach
-                    <tr class="border-b border-slate-50" id="quo-empty-msg" {{ $existingQuos->isNotEmpty() ? ' style="display:none"' : '' }}>
-                        <td colspan="4" class="px-3 py-3 text-center text-slate-400 text-sm italic">Klik "+ Tambah" untuk menambah baris</td>
+                    <tr class="border-b border-slate-50" id="iq-empty-msg" {{ $iqRowCount > 0 ? ' style="display:none"' : '' }}>
+                        <td colspan="7" class="px-3 py-3 text-center text-slate-400 text-sm italic">Klik "+ Tambah" untuk menambah baris</td>
                     </tr>
                 </tbody>
             </table>
         </div>
     </div>
-    <template id="quo-tpl">
-        <tr class="border-b border-slate-50 hover:bg-slate-50">
+    <template id="iq-row-tpl">
+        <tr class="border-b border-slate-50 hover:bg-slate-50" data-maker-row>
+            <td class="{{ $td }}">
+                <input class="{{ $inp }}" type="text" name="rfqs[__IDX__][maker]" placeholder="Nama maker" data-maker-sync="iq-__IDX__">
+                <input type="hidden" name="rfqs[__IDX__][id]" value="">
+                <input type="hidden" name="quotations[__IDX__][id]" value="">
+                <input type="hidden" name="quotations[__IDX__][maker_name]" data-maker-sync-target="iq-__IDX__">
+            </td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="rfqs[__IDX__][rfq_number]" placeholder="INQ-xxx"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="rfqs[__IDX__][rfq_date]"></td>
             <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="quotations[__IDX__][quotation_number]" placeholder="QUO-xxx"></td>
             <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="quotations[__IDX__][quotation_date]"></td>
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="quotations[__IDX__][maker_name]" placeholder="Nama maker"></td>
-            <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'quo-tbody','quo-empty-msg')" class="{{ $btnDel }}">×</button></td>
+            <td class="{{ $td }}"><span class="text-slate-300 text-xs">—</span></td>
+            <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'iq-tbody','iq-empty-msg')" class="{{ $btnDel }}">×</button></td>
         </tr>
     </template>
 
@@ -318,8 +323,45 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
                         <input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][po_number]" value="{{ $po->po_number }}" placeholder="PO-xxx" required>
                     </div>
                     <div><label class="text-xs text-slate-400 mb-0.5 block">PO Date</label><input class="{{ $inp }}" type="date" name="purchase_orders[{{ $pi }}][po_date]" value="{{ optional($po->po_date)->format('Y-m-d') }}"></div>
-                    <div><label class="text-xs text-slate-400 mb-0.5 block">WIP Status</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][wip_status]" value="{{ $po->wip_status }}" placeholder="On Track "></div>
                     <div><label class="text-xs text-slate-400 mb-0.5 block">Delivery Date</label><input class="{{ $inp }}" type="date" name="purchase_orders[{{ $pi }}][exact_delivery_date]" value="{{ optional($po->exact_delivery_date)->format('Y-m-d') }}"></div>
+                    <div>
+                        <label class="text-xs text-slate-400 mb-0.5 block">Linked Inquiry</label>
+                        <select class="{{ $inp }}" name="purchase_orders[{{ $pi }}][rfq_id]">
+                            <option value="">— Tidak ada —</option>
+                            @foreach($existingRfqs as $rfqOpt)
+                            <option value="{{ $rfqOpt->id }}" {{ $po->rfq_id == $rfqOpt->id ? 'selected' : '' }}>{{ $rfqOpt->rfq_number ?: ('INQ #'.$rfqOpt->id) }}{{ $rfqOpt->maker ? ' — '.$rfqOpt->maker : '' }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                {{-- WIP Progress sub-section --}}
+                <div class="rounded-lg border border-slate-100 overflow-hidden mb-4">
+                    <div class="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">WIP Progress</span>
+                        <button type="button" onclick="addWipRowForm(this,'{{ $pi }}')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+ Tambah</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead class="border-b border-slate-100">
+                                <tr>
+                                    <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Progress (%)</th>
+                                    <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Tanggal</th>
+                                    <th class="w-8"></th>
+                                </tr>
+                            </thead>
+                            <tbody data-wip-tbody="{{ $pi }}">
+                            @forelse($po->wipStatuses->sortBy('percentage') as $wi => $wip)
+                            <tr class="border-b border-slate-50 hover:bg-slate-50">
+                                <td class="px-3 py-1.5"><select class="{{ $inp }}" name="purchase_orders[{{ $pi }}][wip_statuses][{{ $wi }}][percentage]"><option value="">—</option><option value="25" {{ $wip->percentage == 25 ? 'selected' : '' }}>25%</option><option value="50" {{ $wip->percentage == 50 ? 'selected' : '' }}>50%</option><option value="75" {{ $wip->percentage == 75 ? 'selected' : '' }}>75%</option><option value="100" {{ $wip->percentage == 100 ? 'selected' : '' }}>100%</option></select></td>
+                                <td class="px-3 py-1.5"><input class="{{ $inp }}" type="date" name="purchase_orders[{{ $pi }}][wip_statuses][{{ $wi }}][status_date]" value="{{ $wip->status_date?->format('Y-m-d') }}"></td>
+                                <td class="px-3 py-1.5"><button type="button" onclick="this.closest('tr').remove()" class="w-6 h-6 flex items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-200 text-xs font-bold">&times;</button></td>
+                            </tr>
+                            @empty
+                            <tr data-wip-empty><td colspan="3" class="px-3 py-2 text-center text-slate-400 italic">Belum ada progress</td></tr>
+                            @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 {{-- Expedite sub-section --}}
                 <div class="rounded-lg border border-slate-100 overflow-hidden mb-4">
@@ -406,8 +448,37 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
                     <input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][po_number]" placeholder="PO-xxx" required>
                 </div>
                 <div><label class="text-xs text-slate-400 mb-0.5 block">PO Date</label><input class="{{ $inp }}" type="date" name="purchase_orders[__PO__][po_date]"></div>
-                <div><label class="text-xs text-slate-400 mb-0.5 block">WIP Status</label><input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][wip_status]" placeholder="On Track"></div>
                 <div><label class="text-xs text-slate-400 mb-0.5 block">Delivery Date</label><input class="{{ $inp }}" type="date" name="purchase_orders[__PO__][exact_delivery_date]"></div>
+                <div>
+                    <label class="text-xs text-slate-400 mb-0.5 block">Linked Inquiry</label>
+                    <select class="{{ $inp }}" name="purchase_orders[__PO__][rfq_id]">
+                        <option value="">— Tidak ada —</option>
+                        @foreach($existingRfqs as $rfqOpt)
+                        <option value="{{ $rfqOpt->id }}">{{ $rfqOpt->rfq_number ?: ('INQ #'.$rfqOpt->id) }}{{ $rfqOpt->maker ? ' — '.$rfqOpt->maker : '' }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            {{-- WIP Progress sub-section --}}
+            <div class="rounded-lg border border-slate-100 overflow-hidden mb-4">
+                <div class="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">WIP Progress</span>
+                    <button type="button" onclick="addWipRowForm(this,'__PO__')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+ Tambah</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead class="border-b border-slate-100">
+                            <tr>
+                                <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Progress (%)</th>
+                                <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Tanggal</th>
+                                <th class="w-8"></th>
+                            </tr>
+                        </thead>
+                        <tbody data-wip-tbody="__PO__">
+                            <tr data-wip-empty><td colspan="3" class="px-3 py-2 text-center text-slate-400 italic">Belum ada progress</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
             {{-- Expedite sub-section --}}
             <div class="rounded-lg border border-slate-100 overflow-hidden mb-4">
@@ -488,8 +559,7 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
 <script>
     const ctrs = {
         cpt: {{$existingCpts->count()}},
-        rfq: {{$existingRfqs->count()}},
-        quo: {{$existingQuos->count()}},
+        iq: {{ $iqRowCount }},
         po: {{$existingPos->count()}},
         bg: {{$existingBgs->count()}},
         sb: {{$existingSbs->count()}}
@@ -507,6 +577,7 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
         const html = tpl.innerHTML.replace(/__IDX__/g, idx);
         tbody.insertAdjacentHTML('beforeend', html);
         tbody.lastElementChild?.querySelector('input')?.focus();
+        if (tbodyId === 'iq-tbody') syncPoDropdowns();
     }
 
     function removeSimpleRow(btn, tbodyId, emptyMsgId) {
@@ -517,6 +588,7 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
             const emptyEl = document.getElementById(emptyMsgId);
             if (emptyEl) emptyEl.style.display = '';
         }
+        if (tbodyId === 'iq-tbody') syncPoDropdowns();
     }
 
     function addSdocRowForm(btn, pi) {
@@ -543,6 +615,7 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
         // Store po index on this card
         newCard.dataset.poIdx = poIdx;
         newCard.querySelector('input:not([type=hidden])')?.focus();
+        syncPoDropdowns();
     }
 
     function removePoCard(btn, containerId, emptyMsgId) {
@@ -578,5 +651,84 @@ $existingSbs = $isEdit ? $contract->suretyBonds : collect();
             if (emptyTr) emptyTr.style.display = '';
         }
     }
+
+    function addWipRowForm(btn, poIdx) {
+        const tbody = btn.closest('.rounded-lg').querySelector('[data-wip-tbody]');
+        if (!tbody) return;
+        const emptyRow = tbody.querySelector('[data-wip-empty]');
+        if (emptyRow) emptyRow.style.display = 'none';
+        const rowCount = tbody.querySelectorAll('tr:not([data-wip-empty])').length;
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-slate-50 hover:bg-slate-50';
+        tr.innerHTML = `<td class="px-3 py-1.5"><select class="border border-slate-200 rounded px-2 py-1 text-sm w-full focus:outline-none focus:border-indigo-400 bg-white" name="purchase_orders[${poIdx}][wip_statuses][${rowCount}][percentage]"><option value="">—</option><option value="25">25%</option><option value="50">50%</option><option value="75">75%</option><option value="100">100%</option></select></td>
+            <td class="px-3 py-1.5"><input class="border border-slate-200 rounded px-2 py-1 text-sm w-full focus:outline-none focus:border-indigo-400 bg-white" type="date" name="purchase_orders[${poIdx}][wip_statuses][${rowCount}][status_date]"></td>
+            <td class="px-3 py-1.5"><button type="button" onclick="this.closest('tr').remove()" class="w-6 h-6 flex items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-200 text-xs font-bold">&times;</button></td>`;
+        tbody.appendChild(tr);
+        tr.querySelector('input')?.focus();
+    }
+
+    function syncMakerTargets(input) {
+        const token = input.dataset.makerSync;
+        if (!token) return;
+        const container = input.closest('[data-maker-row]');
+        if (!container) return;
+        container.querySelectorAll(`[data-maker-sync-target="${token}"]`).forEach(target => {
+            target.value = input.value;
+        });
+    }
+
+    document.addEventListener('input', (event) => {
+        if (event.target.matches('[data-maker-sync]')) {
+            syncMakerTargets(event.target);
+        }
+    });
+
+    document.querySelectorAll('[data-maker-sync]').forEach(syncMakerTargets);
+
+    // ── PO Dropdown Sync ────────────────────────────────────────────────────
+    // Collect current IQ rows and return option objects {value, label}
+    // value = DB id (string) for existing RFQs, or ~{formIndex} for new ones
+    function collectIqOptions() {
+        const rows = Array.from(document.querySelectorAll('#iq-tbody tr')).filter(tr => tr.id !== 'iq-empty-msg');
+        return rows.map(tr => {
+            const idInput  = tr.querySelector('input[name*="rfqs["][name$="[id]"]');
+            const numInput = tr.querySelector('input[name*="rfqs["][name$="[rfq_number]"]');
+            const makerInput = tr.querySelector('input[name*="rfqs["][name$="[maker]"]');
+            if (!numInput) return null;
+            const nameMatch = numInput.name.match(/rfqs\[(\d+)\]/);
+            const idx = nameMatch ? parseInt(nameMatch[1]) : null;
+            if (idx === null) return null;
+            const id    = idInput?.value?.trim() || null;
+            const num   = numInput.value?.trim() || '';
+            const maker = makerInput?.value?.trim() || '';
+            const label = [num || ('Inquiry #' + (idx + 1)), maker].filter(Boolean).join(' — ');
+            const value = id ? id : ('~' + idx);
+            return { value, label };
+        }).filter(Boolean);
+    }
+
+    // Rebuild all PO "Linked Inquiry" dropdowns from current IQ rows
+    function syncPoDropdowns() {
+        const options = collectIqOptions();
+        document.querySelectorAll('[data-po-card] select[name*="[rfq_id]"]').forEach(select => {
+            const currentVal = select.value;
+            while (select.options.length > 1) select.remove(1);
+            options.forEach(opt => {
+                const o = new Option(opt.label, opt.value);
+                if (opt.value === currentVal) o.selected = true;
+                select.add(o);
+            });
+        });
+    }
+
+    // Re-sync dropdowns when IQ row fields change (rfq_number or maker)
+    document.getElementById('iq-tbody').addEventListener('input', e => {
+        if (e.target.matches('[name*="rfq_number"], [name*="rfqs["][name$="[maker]"]')) {
+            syncPoDropdowns();
+        }
+    });
+
+    // Initial sync on page load (edit mode: fills from existing IQ rows)
+    syncPoDropdowns();
 </script>
 @endpush

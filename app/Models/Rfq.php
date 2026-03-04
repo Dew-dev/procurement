@@ -29,4 +29,9 @@ class Rfq extends Model
     {
         return $this->belongsTo(Contract::class);
     }
+
+    public function purchaseOrders(): HasMany
+    {
+        return $this->hasMany(PurchaseOrder::class, 'rfq_id');
+    }
 }

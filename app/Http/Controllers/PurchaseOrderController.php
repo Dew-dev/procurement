@@ -13,6 +13,7 @@ class PurchaseOrderController extends Controller
     private function fill(array $item): array
     {
         return [
+            'rfq_id'              => ($item['rfq_id'] ?? '') ?: null,
             'po_number'           => $item['po_number'] ?? null,
             'po_date'             => $item['po_date'] ?: null,
             'po_payment_term'     => $item['po_payment_term'] ?? null,
@@ -55,6 +56,8 @@ class PurchaseOrderController extends Controller
             } else {
                 $po = $contract->purchaseOrders()->create($data);
             }
+
+            $po?->syncWipStatuses($item['wip_statuses'] ?? null);
 
             // Delete shipping docs marked for removal
             foreach ($item['delete_shipping_docs'] ?? [] as $docId) {

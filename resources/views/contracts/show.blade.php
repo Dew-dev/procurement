@@ -24,7 +24,7 @@
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
             <h1 class="text-2xl font-bold text-slate-900">{{ $contract->contract_number }}</h1>
-            <p class="text-slate-500 text-sm mt-0.5">{{ $contract->buyer_name ?: '' }}</p>
+            <p class="text-slate-500 text-sm mt-0.5">{{ $contract->buyer_name ?: '' }} <span class="font-semibold">{{ $contract->contract_date?->format('d M Y') ?? '' }}</span> / <span class="font-semibold">{{ $contract->delivery_date?->format('d M Y') ?? '' }}</span></p>
         </div>
         @if($isAdmin)
         <div class="flex gap-2">
@@ -37,10 +37,12 @@
         @endif
     </div>
     <dl class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-        <div><dt class="text-slate-400 text-xs">Inquiry from Buyer</dt><dd class="font-medium">{{ $contract->rfq_from_buyer?->format('d M Y') ?? '' }}</dd></div>
-        <div><dt class="text-slate-400 text-xs">Quotation to Buyer</dt><dd class="font-medium">{{ $contract->quotation_to_buyer?->format('d M Y') ?? '' }}</dd></div>
-        <div><dt class="text-slate-400 text-xs">Contract Date</dt><dd class="font-medium">{{ $contract->contract_date?->format('d M Y') ?? '' }}</dd></div>
-        <div><dt class="text-slate-400 text-xs">Delivery Date</dt><dd class="font-medium">{{ $contract->delivery_date?->format('d M Y') ?? '' }}</dd></div>
+        <div><dt class="text-slate-400 text-xs">Inquiry Date (from buyer)</dt><dd class="font-medium">{{ $contract->rfq_from_buyer?->format('d M Y') ?? '-' }}</dd></div>
+        <div><dt class="text-slate-400 text-xs">Inquiry Number (from buyer)</dt><dd class="font-medium">{{ $contract->rfq_number ?? '-' }}</dd></div>
+        <div><dt class="text-slate-400 text-xs">Quotation Date (to buyer)</dt><dd class="font-medium">{{ $contract->quotation_to_buyer?->format('d M Y') ?? '-' }}</dd></div>
+        <div><dt class="text-slate-400 text-xs">Quotation Number (to buyer)</dt><dd class="font-medium">{{ $contract->quotation_number ?? '-' }}</dd></div>
+        <!-- <div><dt class="text-slate-400 text-xs">Contract Date</dt><dd class="font-medium">{{ $contract->contract_date?->format('d M Y') ?? '' }}</dd></div>
+        <div><dt class="text-slate-400 text-xs">Delivery Date</dt><dd class="font-medium">{{ $contract->delivery_date?->format('d M Y') ?? '' }}</dd></div> -->
     </dl>
 </div>
 
@@ -258,13 +260,32 @@
     @endif
 </div>
 
+@php
+    $rfqs = $contract->rfqs;
+    $quotations = $contract->quotations;
+    // Pair RFQs & Quotations by maker (case-insensitive)
+    $rfqsByMaker  = $rfqs->groupBy(fn($r) => strtolower(trim($r->maker ?? '')));
+    $quosByMaker  = $quotations->groupBy(fn($q) => strtolower(trim($q->maker_name ?? '')));
+    $allMakerKeys = $rfqsByMaker->keys()->merge($quosByMaker->keys())->unique()->values();
+    $iqRows = collect();
+    foreach ($allMakerKeys as $mk) {
+        $mRfqs = $rfqsByMaker->get($mk, collect());
+        $mQuos = $quosByMaker->get($mk, collect());
+        foreach (range(0, max($mRfqs->count(), $mQuos->count()) - 1) as $j) {
+            $iqRows->push(['rfq' => $mRfqs->get($j), 'quo' => $mQuos->get($j)]);
+        }
+    }
+    $iqRowCount = $iqRows->count();
+    $posByRfq = $contract->purchaseOrders->groupBy('rfq_id');
+@endphp
+
 {{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-     SECTION 2 â€” RFQs
+     SECTION 2 â€” INQUIRY & QUOTATION
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
 <div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
     <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-        <h2 class="font-semibold text-slate-800">Inquiry</h2>
-        <span class="text-xs text-slate-400">{{ $contract->rfqs->count() }} baris</span>
+        <h2 class="font-semibold text-slate-800">Inquiry &amp; Quotation</h2>
+        <span class="text-xs text-slate-400">{{ $iqRowCount }} baris</span>
     </div>
 
     @if($isAdmin)
@@ -274,100 +295,67 @@
             <table class="w-full text-sm">
                 <thead class="border-b border-slate-100">
                     <tr>
-                        <th class="{{ $th }}">Inquiry Number</th>
-                        <th class="{{ $th }}">Inquiry date</th>
                         <th class="{{ $th }}">Maker</th>
-                        <th class="px-3 py-2 w-8"></th>
-                    </tr>
-                </thead>
-                <tbody id="rfq-tbody">
-                @foreach($contract->rfqs as $i => $rfq)
-                <tr class="border-b border-slate-50 hover:bg-slate-50">
-                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][rfq_number]" value="{{ $rfq->rfq_number }}" placeholder="RFQ-xxx" required><input type="hidden" name="items[{{ $i }}][id]" value="{{ $rfq->id }}" data-row-id></td>
-                    <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[{{ $i }}][rfq_date]" value="{{ $rfq->rfq_date?->format('Y-m-d') }}"></td>
-                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][maker]" value="{{ $rfq->maker }}" placeholder="Nama maker"></td>
-                    <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
-                </tr>
-                @endforeach
-                </tbody>
-            </table>
-        </div>
-        <div class="px-4 py-3 flex gap-2 border-t border-slate-100">
-            <button type="button" onclick="addRow('rfq-tbody','rfq-row-tpl',counters,'rfq')" class="{{ $btnAdd }}">+ Tambah Baris</button>
-            <button type="submit" class="{{ $btnSave }}">Simpan</button>
-        </div>
-    </form>
-
-    <template id="rfq-row-tpl">
-        <tr class="border-b border-slate-50 hover:bg-slate-50">
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][rfq_number]" placeholder="RFQ-xxx" required><input type="hidden" name="items[__IDX__][id]" value="" data-row-id></td>
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[__IDX__][rfq_date]"></td>
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][maker]" placeholder="Nama maker"></td>
-            <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
-        </tr>
-    </template>
-
-    @else
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="border-b border-slate-100"><tr><th class="{{ $th }}">Inquiry Number</th><th class="{{ $th }}">Inquiry date</th><th class="{{ $th }}">Maker</th></tr></thead>
-            <tbody>
-            @forelse($contract->rfqs as $rfq)
-            <tr class="border-b border-slate-50"><td class="{{ $td }}">{{ $rfq->rfq_number }}</td><td class="{{ $td }}">{{ $rfq->rfq_date?->format('d/m/Y') ?? '' }}</td><td class="{{ $td }}">{{ $rfq->maker ?: '' }}</td></tr>
-            @empty
-            <tr><td colspan="3" class="px-4 py-4 text-center text-slate-400 text-sm">Belum ada data</td></tr>
-            @endforelse
-            </tbody>
-        </table>
-    </div>
-    @endif
-</div>
-
-{{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-     SECTION 3 â€” QUOTATIONS
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
-<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
-    <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-        <h2 class="font-semibold text-slate-800">Quotations</h2>
-        <span class="text-xs text-slate-400">{{ $contract->quotations->count() }} baris</span>
-    </div>
-
-    @if($isAdmin)
-    <form method="POST" action="{{ route('contracts.quotations.upsert', $contract) }}">
-        @csrf @method('PUT')
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="border-b border-slate-100">
-                    <tr>
+                        <th class="{{ $th }}">Inquiry Number</th>
+                        <th class="{{ $th }}">Inquiry Date</th>
                         <th class="{{ $th }}">Quotation Number</th>
                         <th class="{{ $th }}">Quotation Date</th>
-                        <th class="{{ $th }}">Maker Name</th>
+                        <th class="{{ $th }}">PO Terkait</th>
                         <th class="px-3 py-2 w-8"></th>
                     </tr>
                 </thead>
-                <tbody id="quo-tbody">
-                @foreach($contract->quotations as $i => $q)
-                <tr class="border-b border-slate-50 hover:bg-slate-50">
-                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][quotation_number]" value="{{ $q->quotation_number }}" placeholder="QUO-xxx" required><input type="hidden" name="items[{{ $i }}][id]" value="{{ $q->id }}" data-row-id></td>
-                    <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[{{ $i }}][quotation_date]" value="{{ $q->quotation_date?->format('Y-m-d') }}"></td>
-                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][maker_name]" value="{{ $q->maker_name }}" placeholder="Nama maker"></td>
-                    <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
-                </tr>
+                <tbody id="iq-tbody">
+                @foreach($iqRows as $i => $iqRow)
+                    @php
+                        $rfq = $iqRow['rfq'];
+                        $quo = $iqRow['quo'];
+                        $makerValue = optional($rfq)->maker ?? optional($quo)->maker_name ?? '';
+                        $makerToken = 'iq-' . $i;
+                        $rfqDate = optional(optional($rfq)->rfq_date)->format('Y-m-d');
+                        $quoDate = optional(optional($quo)->quotation_date)->format('Y-m-d');
+                        $linkedPos = $rfq ? ($posByRfq->get($rfq->id) ?? collect()) : collect();
+                    @endphp
+                    <tr class="border-b border-slate-50 hover:bg-slate-50" data-maker-row>
+                        <td class="{{ $td }}">
+                            <input class="{{ $inp }}" type="text" name="items[{{ $i }}][maker]" value="{{ $makerValue }}" placeholder="Nama maker" data-maker-sync="{{ $makerToken }}">
+                            <input type="hidden" name="items[{{ $i }}][id]" value="{{ optional($rfq)->id }}" data-row-id>
+                            <input type="hidden" name="quotations[{{ $i }}][id]" value="{{ optional($quo)->id }}" data-row-id>
+                            <input type="hidden" name="quotations[{{ $i }}][maker_name]" value="{{ optional($quo)->maker_name ?? $makerValue }}" data-maker-sync-target="{{ $makerToken }}">
+                        </td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][rfq_number]" value="{{ optional($rfq)->rfq_number }}" placeholder="INQ-xxx"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[{{ $i }}][rfq_date]" value="{{ $rfqDate }}"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="quotations[{{ $i }}][quotation_number]" value="{{ optional($quo)->quotation_number }}" placeholder="QUO-xxx"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="quotations[{{ $i }}][quotation_date]" value="{{ $quoDate }}"></td>
+                        <td class="{{ $td }}">
+                            @forelse($linkedPos as $lpo)
+                            <button type="button" onclick="openPoModal({{ $lpo->id }})" class="inline-block px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 text-xs font-medium mr-1 mb-0.5 hover:bg-indigo-200 cursor-pointer">{{ $lpo->po_number }}</button>
+                            @empty<span class="text-slate-300 text-xs">—</span>@endforelse
+                        </td>
+                        <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
+                    </tr>
                 @endforeach
                 </tbody>
             </table>
         </div>
         <div class="px-4 py-3 flex gap-2 border-t border-slate-100">
-            <button type="button" onclick="addRow('quo-tbody','quo-row-tpl',counters,'quo')" class="{{ $btnAdd }}">+ Tambah Baris</button>
+            <button type="button" onclick="addRow('iq-tbody','iq-row-tpl',counters,'iq')" class="{{ $btnAdd }}">+ Tambah Baris</button>
             <button type="submit" class="{{ $btnSave }}">Simpan</button>
         </div>
     </form>
 
-    <template id="quo-row-tpl">
-        <tr class="border-b border-slate-50 hover:bg-slate-50">
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][quotation_number]" placeholder="QUO-xxx" required><input type="hidden" name="items[__IDX__][id]" value="" data-row-id></td>
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[__IDX__][quotation_date]"></td>
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][maker_name]" placeholder="Nama maker"></td>
+    <template id="iq-row-tpl">
+        <tr class="border-b border-slate-50 hover:bg-slate-50" data-maker-row>
+            <td class="{{ $td }}">
+                <input class="{{ $inp }}" type="text" name="items[__IDX__][maker]" placeholder="Nama maker" data-maker-sync="iq-__IDX__">
+                <input type="hidden" name="items[__IDX__][id]" value="" data-row-id>
+                <input type="hidden" name="quotations[__IDX__][id]" value="" data-row-id>
+                <input type="hidden" name="quotations[__IDX__][maker_name]" data-maker-sync-target="iq-__IDX__">
+            </td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][rfq_number]" placeholder="INQ-xxx"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="items[__IDX__][rfq_date]"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="quotations[__IDX__][quotation_number]" placeholder="QUO-xxx"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="quotations[__IDX__][quotation_date]"></td>
+            <td class="{{ $td }}"><span class="text-slate-300 text-xs">—</span></td>
             <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
         </tr>
     </template>
@@ -375,13 +363,39 @@
     @else
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
-            <thead class="border-b border-slate-100"><tr><th class="{{ $th }}">Quotation Number</th><th class="{{ $th }}">Date</th><th class="{{ $th }}">Maker Name</th></tr></thead>
+            <thead class="border-b border-slate-100"><tr>
+                <th class="{{ $th }}">Maker</th>
+                <th class="{{ $th }}">Inquiry Number</th>
+                <th class="{{ $th }}">Inquiry Date</th>
+                <th class="{{ $th }}">Quotation Number</th>
+                <th class="{{ $th }}">Quotation Date</th>
+                <th class="{{ $th }}">PO Terkait</th>
+            </tr></thead>
             <tbody>
-            @forelse($contract->quotations as $q)
-            <tr class="border-b border-slate-50"><td class="{{ $td }}">{{ $q->quotation_number }}</td><td class="{{ $td }}">{{ $q->quotation_date?->format('d/m/Y') ?? '' }}</td><td class="{{ $td }}">{{ $q->maker_name ?? '' }}</td></tr>
-            @empty
-            <tr><td colspan="3" class="px-4 py-4 text-center text-slate-400 text-sm">Belum ada data</td></tr>
-            @endforelse
+            @if($iqRowCount > 0)
+                @foreach($iqRows as $i => $iqRow)
+                    @php
+                        $rfq = $iqRow['rfq'];
+                        $quo = $iqRow['quo'];
+                        $makerValue = optional($rfq)->maker ?? optional($quo)->maker_name ?? '';
+                    @endphp
+                    <tr class="border-b border-slate-50">
+                        <td class="{{ $td }}">{{ $makerValue }}</td>
+                        <td class="{{ $td }}">{{ $rfq?->rfq_number ?? '' }}</td>
+                        <td class="{{ $td }}">{{ $rfq?->rfq_date?->format('d/m/Y') ?? '' }}</td>
+                        <td class="{{ $td }}">{{ $quo?->quotation_number ?? '' }}</td>
+                        <td class="{{ $td }}">{{ $quo?->quotation_date?->format('d/m/Y') ?? '' }}</td>
+                        <td class="{{ $td }}">
+                            @php $roPos = $rfq ? ($posByRfq->get($rfq->id) ?? collect()) : collect(); @endphp
+                            @forelse($roPos as $lpo)
+                            <button type="button" onclick="openPoModal({{ $lpo->id }})" class="inline-block px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 text-xs font-medium mr-1 mb-0.5 hover:bg-indigo-200 cursor-pointer">{{ $lpo->po_number }}</button>
+                            @empty<span class="text-slate-300 text-xs">—</span>@endforelse
+                        </td>
+                    </tr>
+                @endforeach
+            @else
+                <tr><td colspan="6" class="px-4 py-4 text-center text-slate-400 text-sm">Belum ada data</td></tr>
+            @endif
             </tbody>
         </table>
     </div>
@@ -391,7 +405,7 @@
 {{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      SECTION 4 â€” PURCHASE ORDERS (cards layout)
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
-<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
+<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden hidden">
     <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
         <h2 class="font-semibold text-slate-800">Purchase Orders</h2>
         <span class="text-xs text-slate-400">{{ $contract->purchaseOrders->count() }} PO</span>
@@ -420,12 +434,45 @@
                     <input class="{{ $inp }}" type="date" name="items[{{ $i }}][po_date]" value="{{ $po->po_date?->format('Y-m-d') }}">
                 </div>
                 <div>
-                    <label class="text-xs text-slate-400 mb-0.5 block">WIP Status</label>
-                    <input class="{{ $inp }}" type="text" name="items[{{ $i }}][wip_status]" value="{{ $po->wip_status }}" placeholder="On Track / Late">
-                </div>
-                <div>
                     <label class="text-xs text-slate-400 mb-0.5 block">Delivery Date</label>
                     <input class="{{ $inp }}" type="date" name="items[{{ $i }}][exact_delivery_date]" value="{{ $po->exact_delivery_date?->format('Y-m-d') }}">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 mb-0.5 block">Linked Inquiry</label>
+                    <select class="{{ $inp }}" name="items[{{ $i }}][rfq_id]">
+                        <option value="">— Tidak ada —</option>
+                        @foreach($rfqs as $rfqOpt)
+                        <option value="{{ $rfqOpt->id }}" {{ $po->rfq_id == $rfqOpt->id ? 'selected' : '' }}>{{ $rfqOpt->rfq_number ?: ('INQ #'.$rfqOpt->id) }}{{ $rfqOpt->maker ? ' — '.$rfqOpt->maker : '' }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="rounded-lg border border-slate-100 overflow-hidden mb-4">
+                <div class="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">WIP Progress</span>
+                    <button type="button" onclick="addWipRow(this,'{{ $i }}')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+ Tambah</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead class="border-b border-slate-100">
+                            <tr>
+                                <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Progress (%)</th>
+                                <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Tanggal</th>
+                                <th class="w-8"></th>
+                            </tr>
+                        </thead>
+                        <tbody data-wip-tbody="{{ $i }}">
+                        @forelse($po->wipStatuses->sortBy('percentage') as $wi => $wip)
+                        <tr class="border-b border-slate-50 hover:bg-slate-50">
+                            <td class="px-3 py-1.5"><select class="{{ $inp }}" name="items[{{ $i }}][wip_statuses][{{ $wi }}][percentage]"><option value="">—</option><option value="25" {{ $wip->percentage == 25 ? 'selected' : '' }}>25%</option><option value="50" {{ $wip->percentage == 50 ? 'selected' : '' }}>50%</option><option value="75" {{ $wip->percentage == 75 ? 'selected' : '' }}>75%</option><option value="100" {{ $wip->percentage == 100 ? 'selected' : '' }}>100%</option></select></td>
+                            <td class="px-3 py-1.5"><input class="{{ $inp }}" type="date" name="items[{{ $i }}][wip_statuses][{{ $wi }}][status_date]" value="{{ $wip->status_date?->format('Y-m-d') }}"></td>
+                            <td class="px-3 py-1.5"><button type="button" onclick="this.closest('tr').remove()" class="w-6 h-6 flex items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-200 text-xs font-bold">×</button></td>
+                        </tr>
+                        @empty
+                        <tr data-wip-empty><td colspan="3" class="px-3 py-2 text-center text-slate-400 italic">Belum ada progress</td></tr>
+                        @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
             {{-- Expedite sub-section --}}
@@ -497,12 +544,37 @@
                     <input class="{{ $inp }}" type="date" name="items[__IDX__][po_date]">
                 </div>
                 <div>
-                    <label class="text-xs text-slate-400 mb-0.5 block">WIP Status</label>
-                    <input class="{{ $inp }}" type="text" name="items[__IDX__][wip_status]" placeholder="On Track / Late">
-                </div>
-                <div>
                     <label class="text-xs text-slate-400 mb-0.5 block">Delivery Date</label>
                     <input class="{{ $inp }}" type="date" name="items[__IDX__][exact_delivery_date]">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 mb-0.5 block">Linked Inquiry</label>
+                    <select class="{{ $inp }}" name="items[__IDX__][rfq_id]">
+                        <option value="">— Tidak ada —</option>
+                        @foreach($rfqs as $rfqOpt)
+                        <option value="{{ $rfqOpt->id }}">{{ $rfqOpt->rfq_number ?: ('INQ #'.$rfqOpt->id) }}{{ $rfqOpt->maker ? ' — '.$rfqOpt->maker : '' }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="rounded-lg border border-slate-100 overflow-hidden mb-4">
+                <div class="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">WIP Progress</span>
+                    <button type="button" onclick="addWipRow(this,'__IDX__')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+ Tambah</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead class="border-b border-slate-100">
+                            <tr>
+                                <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Progress (%)</th>
+                                <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Tanggal</th>
+                                <th class="w-8"></th>
+                            </tr>
+                        </thead>
+                        <tbody data-wip-tbody="__IDX__">
+                            <tr data-wip-empty><td colspan="3" class="px-3 py-2 text-center text-slate-400 italic">Belum ada progress</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
             {{-- Expedite sub-section --}}
@@ -545,26 +617,13 @@
     @else
     {{-- Read-only PO list --}}
     @forelse($contract->purchaseOrders as $po)
-    <div class="p-5 border-b border-slate-100">
-        <p class="font-semibold text-slate-800 mb-2">{{ $po->po_number }}</p>
-        <dl class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm mb-3">
-            <div><dt class="text-slate-400 text-xs">PO Date</dt><dd>{{ $po->po_date?->format('d/m/Y') ?? '' }}</dd></div>
-            <div><dt class="text-slate-400 text-xs">WIP Status</dt><dd>{{ $po->wip_status ?: '' }}</dd></div>
-            <div><dt class="text-slate-400 text-xs">Delivery Date</dt><dd>{{ $po->exact_delivery_date?->format('d/m/Y') ?? '' }}</dd></div>
-        </dl>
-        <div class="rounded-lg border border-slate-100 overflow-hidden">
-            <div class="px-3 py-1.5 bg-slate-50 border-b border-slate-100">
-                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Expedite</span>
-            </div>
-            <dl class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm p-3">
-                <div><dt class="text-slate-400 text-xs">Dimension</dt><dd>{{ $po->dimension ?: '' }}</dd></div>
-                <div><dt class="text-slate-400 text-xs">Weight</dt><dd>{{ $po->weight ?: '' }}</dd></div>
-                <div><dt class="text-slate-400 text-xs">Incoterm</dt><dd>{{ $po->incoterm ?: '' }}</dd></div>
-                <div><dt class="text-slate-400 text-xs">Expedite Note</dt><dd>{{ $po->expedite ?: '' }}</dd></div>
-                <div class="col-span-2 sm:col-span-4"><dt class="text-slate-400 text-xs">Shipping Docs</dt><dd class="flex flex-wrap gap-x-3 gap-y-1 mt-0.5">@foreach($po->shippingDocuments as $doc)<a href="{{ $doc->url }}" target="_blank" class="text-sky-600 hover:underline text-sm">{{ $doc->name }}</a>@endforeach{{ $po->shippingDocuments->isEmpty() ? '-' : '' }}</dd></div>
-            </dl>
+    <button type="button" onclick="openPoModal({{ $po->id }})" class="w-full text-left px-5 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors flex items-center justify-between group">
+        <div>
+            <p class="font-semibold text-slate-800 text-sm">{{ $po->po_number }}</p>
+            <p class="text-xs text-slate-400 mt-0.5">{{ $po->rfq?->maker ?: '' }}{{ $po->rfq?->maker && $po->po_date ? ' · ' : '' }}{{ $po->po_date?->format('d/m/Y') ?? '' }}</p>
         </div>
-    </div>
+        <svg class="w-4 h-4 text-slate-300 group-hover:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </button>
     @empty
     <div class="px-6 py-4 text-center text-slate-400 text-sm">Belum ada PO</div>
     @endforelse
@@ -576,7 +635,7 @@
      Note: only shown for existing POs. New POs need to be saved first.
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
 @if($contract->purchaseOrders->count() > 0)
-<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
+<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden hidden">
     <div class="px-6 py-3 border-b border-slate-100 bg-slate-50">
         <h2 class="font-semibold text-slate-800">Maker Payment Terms</h2>
         <p class="text-xs text-slate-400 mt-0.5">Per PO  simpan masing-masing secara terpisah</p>
@@ -658,7 +717,16 @@
 </div>
 @endif
 
-
+{{-- ── PO Detail Modal ─────────────────────────────────────────────────── --}}
+<div id="po-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40" onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 overflow-hidden max-h-[90vh] flex flex-col">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+            <h3 class="font-semibold text-slate-800" id="po-modal-title">Detail Purchase Order</h3>
+            <button onclick="document.getElementById('po-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+        </div>
+        <div id="po-modal-body" class="p-6 overflow-y-auto text-sm text-slate-700"></div>
+    </div>
+</div>
 
 @endsection
 
@@ -667,8 +735,7 @@
 // â”€â”€ Row counters (start after existing records) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const counters = {
     cpt: {{ $contract->contractPaymentTerms->count() }},
-    rfq: {{ $contract->rfqs->count() }},
-    quo: {{ $contract->quotations->count() }},
+    iq: {{ $iqRowCount }},
     po:  {{ $contract->purchaseOrders->count() }},
     bg:  {{ $contract->bgNumbers->count() }},
     sb:  {{ $contract->suretyBonds->count() }},
@@ -704,38 +771,36 @@ function addMptRow(tbodyId, templateId, mptCountersObj, poId) {
 
 // â”€â”€ Remove / undo a simple table row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function removeRow(btn) {
-    const tr      = btn.closest('tr');
-    const idInput = tr.querySelector('[data-row-id]');
+    const tr = btn.closest('tr');
+    const idInputs = Array.from(tr.querySelectorAll('[data-row-id]')).filter(input => input.value);
 
-    if (idInput?.value) {
-        // Existing record â€” toggle mark-for-delete
+    if (idInputs.length > 0) {
         const isMarked = tr.dataset.markedDelete === '1';
         if (isMarked) {
-            // Undo
             delete tr.dataset.markedDelete;
             tr.classList.remove('opacity-40');
             tr.querySelectorAll('input[data-del-flag]').forEach(el => el.remove());
             tr.querySelectorAll('input:not([data-row-id]):not([type=hidden]), textarea, select')
-              .forEach(el => el.disabled = false);
+                .forEach(el => el.disabled = false);
             btn.textContent = '-';
             btn.title = 'Hapus baris ini';
         } else {
-            // Mark for deletion
             tr.dataset.markedDelete = '1';
             tr.classList.add('opacity-40');
-            const del = document.createElement('input');
-            del.type  = 'hidden';
-            del.name  = idInput.name.replace('[id]', '[_delete]');
-            del.value = '1';
-            del.dataset.delFlag = '';
-            tr.appendChild(del);
+            idInputs.forEach(idInput => {
+                const del = document.createElement('input');
+                del.type  = 'hidden';
+                del.name  = idInput.name.replace('[id]', '[_delete]');
+                del.value = '1';
+                del.dataset.delFlag = '';
+                tr.appendChild(del);
+            });
             tr.querySelectorAll('input:not([data-row-id]):not([type=hidden]), textarea, select')
-              .forEach(el => el.disabled = true);
-            btn.textContent = 'â†©';
+                .forEach(el => el.disabled = true);
+            btn.textContent = 'Undo';
             btn.title = 'Batalkan hapus';
         }
     } else {
-        // New row â€” just remove it
         tr.remove();
     }
 }
@@ -795,6 +860,125 @@ function removePoCard(btn) {
     } else {
         card.remove();
     }
+}
+
+function addWipRow(btn, poIdx) {
+    const tbody = btn.closest('.rounded-lg').querySelector('[data-wip-tbody]');
+    if (!tbody) return;
+    const emptyRow = tbody.querySelector('[data-wip-empty]');
+    if (emptyRow) emptyRow.style.display = 'none';
+    const rowCount = tbody.querySelectorAll('tr:not([data-wip-empty])').length;
+    const tr = document.createElement('tr');
+    tr.className = 'border-b border-slate-50 hover:bg-slate-50';
+    tr.innerHTML = `<td class="px-3 py-1.5"><select class="border border-slate-200 rounded px-2 py-1 text-sm w-full focus:outline-none focus:border-indigo-400 bg-white" name="items[${poIdx}][wip_statuses][${rowCount}][percentage]"><option value="">—</option><option value="25">25%</option><option value="50">50%</option><option value="75">75%</option><option value="100">100%</option></select></td>
+        <td class="px-3 py-1.5"><input class="border border-slate-200 rounded px-2 py-1 text-sm w-full focus:outline-none focus:border-indigo-400 bg-white" type="date" name="items[${poIdx}][wip_statuses][${rowCount}][status_date]"></td>
+        <td class="px-3 py-1.5"><button type="button" onclick="this.closest('tr').remove()" class="w-6 h-6 flex items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-200 text-xs font-bold">&times;</button></td>`;
+    tbody.appendChild(tr);
+    tr.querySelector('input')?.focus();
+}
+
+function syncMakerTargets(input) {
+    const token = input.dataset.makerSync;
+    if (!token) return;
+    const container = input.closest('[data-maker-row]');
+    if (!container) return;
+    container.querySelectorAll(`[data-maker-sync-target="${token}"]`).forEach(target => {
+        target.value = input.value;
+    });
+}
+
+document.addEventListener('input', (event) => {
+    if (event.target.matches('[data-maker-sync]')) {
+        syncMakerTargets(event.target);
+    }
+});
+
+document.querySelectorAll('[data-maker-sync]').forEach(syncMakerTargets);
+
+// ── PO Modal ──────────────────────────────────────────────────────────────
+@php
+$poJsonMap = [];
+foreach ($contract->purchaseOrders as $poItem) {
+    $poJsonMap[$poItem->id] = [
+        'po_number'           => $poItem->po_number,
+        'po_date'             => $poItem->po_date?->format('d/m/Y'),
+        'maker'               => $poItem->rfq?->maker ?? '',
+        'exact_delivery_date' => $poItem->exact_delivery_date?->format('d/m/Y'),
+        'incoterm'            => $poItem->incoterm,
+        'dimension'           => $poItem->dimension,
+        'weight'              => $poItem->weight,
+        'expedite'            => $poItem->expedite,
+        'payment_terms'       => $poItem->makerPaymentTerms->sortBy('term_code')->map(fn($m) => [
+            'term_code'      => $m->term_code,
+            'percentage'     => $m->percentage !== null ? rtrim(rtrim(number_format((float)$m->percentage, 2), '0'), '.') : null,
+            'invoice_number' => $m->invoice_number,
+            'paid_date'      => $m->paid_date?->format('d/m/Y'),
+        ])->values()->toArray(),
+        'wip_statuses'        => $poItem->wipStatuses->sortBy('percentage')->map(fn($w) => [
+            'percentage'  => $w->percentage,
+            'status_date' => $w->status_date?->format('d/m/Y'),
+        ])->values()->toArray(),
+        'shipping_docs' => $poItem->shippingDocuments->map(fn($d) => [
+            'name' => $d->name,
+            'url'  => asset('storage/'.$d->file_path),
+        ])->values()->toArray(),
+    ];
+}
+@endphp
+const poData = @json($poJsonMap);
+
+function openPoModal(poId) {
+    const po = poData[poId];
+    if (!po) return;
+    document.getElementById('po-modal-title').textContent = po.po_number;
+
+    // ── Header info row
+    let html = `<div class="flex flex-wrap gap-x-6 gap-y-2 text-sm mb-4 pb-4 border-b border-slate-100">`;
+    html += `<div><div class="text-xs text-slate-400 uppercase tracking-wide">PO Date</div><div class="font-medium text-slate-800">${po.po_date || '\u2014'}</div></div>`;
+    if (po.maker) html += `<div><div class="text-xs text-slate-400 uppercase tracking-wide">Maker</div><div class="font-medium text-slate-800">${po.maker}</div></div>`;
+    html += `<div><div class="text-xs text-slate-400 uppercase tracking-wide">D. Date</div><div class="font-medium text-slate-800">${po.exact_delivery_date || '\u2014'}</div></div>`;
+    if (po.incoterm) html += `<div><div class="text-xs text-slate-400 uppercase tracking-wide">Incoterm</div><div class="font-medium text-slate-800">${po.incoterm}</div></div>`;
+    html += `</div>`;
+
+    // ── Payment terms pills
+    if (po.payment_terms && po.payment_terms.length) {
+        html += `<div class="mb-4"><div class="text-xs text-slate-400 uppercase tracking-wide mb-1.5">Payment</div><div class="flex flex-wrap gap-1.5">`;
+        po.payment_terms.forEach(m => {
+            let label = `<span class="font-medium">${m.term_code}</span>`;
+            if (m.percentage) label += ` <span class="text-slate-500">${m.percentage}%</span>`;
+            if (m.invoice_number) label += ` <span class="text-sky-500">${m.invoice_number}</span>`;
+            if (m.paid_date) label += ` <span class="text-emerald-500">&#10003;</span>`;
+            html += `<span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-700">${label}</span>`;
+        });
+        html += `</div></div>`;
+    }
+
+    // ── WIP Progress pills
+    if (po.wip_statuses && po.wip_statuses.length) {
+        html += `<div class="mb-4"><div class="text-xs text-slate-400 uppercase tracking-wide mb-1.5">WIP Progress</div><div class="flex flex-wrap gap-1.5">`;
+        po.wip_statuses.forEach(w => {
+            html += `<span class="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700">${w.percentage}%${w.status_date ? ` <span class="text-indigo-400 font-normal">${w.status_date}</span>` : ''}</span>`;
+        });
+        html += `</div></div>`;
+    }
+
+    // ── Expedite details
+    if (po.dimension || po.weight || po.incoterm || po.expedite) {
+        html += `<div class="rounded-lg border border-slate-100 overflow-hidden mb-4"><div class="px-4 py-2 bg-slate-50 border-b border-slate-100"><span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Expedite</span></div><dl class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 text-sm">`;
+        if (po.dimension) html += `<div><dt class="text-xs text-slate-400">Dimension</dt><dd>${po.dimension}</dd></div>`;
+        if (po.weight) html += `<div><dt class="text-xs text-slate-400">Weight</dt><dd>${po.weight}</dd></div>`;
+        if (po.incoterm) html += `<div><dt class="text-xs text-slate-400">Incoterm</dt><dd>${po.incoterm}</dd></div>`;
+        if (po.expedite) html += `<div><dt class="text-xs text-slate-400">Note</dt><dd>${po.expedite}</dd></div>`;
+        html += `</dl></div>`;
+    }
+
+    // ── Shipping docs
+    if (po.shipping_docs && po.shipping_docs.length) {
+        html += `<div class="rounded-lg border border-slate-100 overflow-hidden"><div class="px-4 py-2 bg-slate-50 border-b border-slate-100"><span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Shipping Documents</span></div><div class="p-3 flex flex-wrap gap-2">${po.shipping_docs.map(d => `<a href="${d.url}" target="_blank" class="text-sky-600 hover:underline text-sm">${d.name}</a>`).join('')}</div></div>`;
+    }
+
+    document.getElementById('po-modal-body').innerHTML = html;
+    document.getElementById('po-modal').classList.remove('hidden');
 }
 </script>
 @endpush

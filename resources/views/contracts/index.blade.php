@@ -17,6 +17,7 @@
                     <th class="text-left px-4 py-3">No Contract</th>
                     <th class="text-left px-4 py-3">Buyer</th>
                     <th class="text-left px-4 py-3">Tanggal Contract</th>
+                    <th class="text-left px-4 py-3">Tanggal Delivery</th>
                     <th class="text-left px-4 py-3 w-52">Aksi</th>
                 </tr>
             </thead>
@@ -26,6 +27,7 @@
                         <td class="px-4 py-3 font-medium">{{ $contract->contract_number }}</td>
                         <td class="px-4 py-3">{{ $contract->buyer_name ?: '-' }}</td>
                         <td class="px-4 py-3">{{ optional($contract->contract_date)->format('Y-m-d') ?: '-' }}</td>
+                        <td class="px-4 py-3">{{ optional($contract->delivery_date)->format('Y-m-d') ?: '-' }}</td>
                         <td class="px-4 py-3 flex gap-2">
                             <a href="{{ route('contracts.show', $contract) }}" class="px-3 py-1.5 rounded-md border border-slate-300 hover:bg-slate-50">Detail</a>
                             @if (auth()->user()->role === 'admin')
