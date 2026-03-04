@@ -17,7 +17,7 @@
 
 {{-- â”€â”€ CONTRACT HEADER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ --}}
 <div class="mb-5 flex items-center gap-3">
-    <a href="{{ route('contracts.index') }}" class="text-slate-400 hover:text-slate-600 text-sm">â† Contracts</a>
+    <a href="{{ route('contracts.index') }}" class="text-slate-400 hover:text-slate-600 text-sm"> Contracts</a>
 </div>
 
 <div class="bg-white rounded-xl border border-slate-200 p-6 mb-7">
