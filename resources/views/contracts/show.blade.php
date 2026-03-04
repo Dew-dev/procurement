@@ -37,7 +37,7 @@
         @endif
     </div>
     <dl class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-        <div><dt class="text-slate-400 text-xs">RFQ from Buyer</dt><dd class="font-medium">{{ $contract->rfq_from_buyer?->format('d M Y') ?? '' }}</dd></div>
+        <div><dt class="text-slate-400 text-xs">Inquiry from Buyer</dt><dd class="font-medium">{{ $contract->rfq_from_buyer?->format('d M Y') ?? '' }}</dd></div>
         <div><dt class="text-slate-400 text-xs">Quotation to Buyer</dt><dd class="font-medium">{{ $contract->quotation_to_buyer?->format('d M Y') ?? '' }}</dd></div>
         <div><dt class="text-slate-400 text-xs">Contract Date</dt><dd class="font-medium">{{ $contract->contract_date?->format('d M Y') ?? '' }}</dd></div>
         <div><dt class="text-slate-400 text-xs">Delivery Date</dt><dd class="font-medium">{{ $contract->delivery_date?->format('d M Y') ?? '' }}</dd></div>
