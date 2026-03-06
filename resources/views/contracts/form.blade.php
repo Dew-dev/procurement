@@ -232,7 +232,7 @@ $posByRfq = $existingPos->groupBy('rfq_id');
         </tr>
     </template>
 
-    {{-- INQUIRY & QUOTATION --}}
+    {{-- Procurement & Expedite --}}
     <div class="{{ $section }}">
         <div class="{{ $secHead }}">
             <h2 class="font-semibold text-slate-800">Inquiry &amp; Quotation</h2>
@@ -372,6 +372,7 @@ $posByRfq = $existingPos->groupBy('rfq_id');
                         <div><label class="text-xs text-slate-400 mb-0.5 block">Dimension</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][dimension]" value="{{ $po->dimension }}" placeholder="pxlxt cm"></div>
                         <div><label class="text-xs text-slate-400 mb-0.5 block">Weight</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][weight]" value="{{ $po->weight }}" placeholder="kg"></div>
                         <div><label class="text-xs text-slate-400 mb-0.5 block">Incoterm</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][incoterm]" value="{{ $po->incoterm }}" placeholder="FOB, CIF "></div>
+                        <div><label class="text-xs text-slate-400 mb-0.5 block">Delivered Date</label><input class="{{ $inp }}" type="date" name="purchase_orders[{{ $pi }}][delivered_date]" value="{{ $po->delivered_date?->format('Y-m-d') }}"></div>
                         <div><label class="text-xs text-slate-400 mb-0.5 block">Expedite Note</label><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][expedite]" value="{{ $po->expedite }}" placeholder="Catatan expedite"></div>
                         <div class="col-span-2 sm:col-span-3 lg:col-span-4">
                             <label class="text-xs text-slate-400 mb-0.5 block">Shipping Documents</label>
@@ -489,6 +490,7 @@ $posByRfq = $existingPos->groupBy('rfq_id');
                     <div><label class="text-xs text-slate-400 mb-0.5 block">Dimension</label><input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][dimension]" placeholder="pxlxt cm"></div>
                     <div><label class="text-xs text-slate-400 mb-0.5 block">Weight</label><input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][weight]" placeholder="kg"></div>
                     <div><label class="text-xs text-slate-400 mb-0.5 block">Incoterm</label><input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][incoterm]" placeholder="FOB, CIF "></div>
+                    <div><label class="text-xs text-slate-400 mb-0.5 block">Delivered Date</label><input class="{{ $inp }}" type="date" name="purchase_orders[__PO__][delivered_date]"></div>
                     <div><label class="text-xs text-slate-400 mb-0.5 block">Expedite Note</label><input class="{{ $inp }}" type="text" name="purchase_orders[__PO__][expedite]" placeholder="Catatan expedite"></div>
                     <div class="col-span-2 sm:col-span-3 lg:col-span-4">
                         <label class="text-xs text-slate-400 mb-0.5 block">Shipping Documents</label>

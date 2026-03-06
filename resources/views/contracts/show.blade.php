@@ -280,7 +280,7 @@
 @endphp
 
 {{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-     SECTION 2 â€” INQUIRY & QUOTATION
+     SECTION 2 â€” Procurement & Expedite
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
 <div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
     <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
@@ -494,10 +494,14 @@
                         <input class="{{ $inp }}" type="text" name="items[{{ $i }}][incoterm]" value="{{ $po->incoterm }}" placeholder="FOB, CIF">
                     </div>
                     <div>
+                        <label class="text-xs text-slate-400 mb-0.5 block">Delivered Date</label>
+                        <input class="{{ $inp }}" type="date" name="items[{{ $i }}][delivered_date]" value="{{ $po->delivered_date?->format('Y-m-d') }}">
+                    </div>
+                    <div>
                         <label class="text-xs text-slate-400 mb-0.5 block">Expedite Note</label>
                         <input class="{{ $inp }}" type="text" name="items[{{ $i }}][expedite]" value="{{ $po->expedite }}" placeholder="Catatan expedite">
                     </div>
-                    <div class="col-span-2 sm:col-span-3 lg:col-span-4">
+                    <div class="col-span-2 sm:col-span-3 lg:col-span-3">
                         <label class="text-xs text-slate-400 mb-0.5 block">Shipping Documents</label>
                         @foreach($po->shippingDocuments as $doc)
                         <div class="flex items-center gap-2 mb-1">
@@ -594,6 +598,10 @@
                     <div>
                         <label class="text-xs text-slate-400 mb-0.5 block">Incoterm</label>
                         <input class="{{ $inp }}" type="text" name="items[__IDX__][incoterm]" placeholder="FOB, CIF">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 mb-0.5 block">Delivered Date</label>
+                        <input class="{{ $inp }}" type="date" name="items[__IDX__][delivered_date]">
                     </div>
                     <div>
                         <label class="text-xs text-slate-400 mb-0.5 block">Expedite Note</label>
@@ -903,11 +911,16 @@ foreach ($contract->purchaseOrders as $poItem) {
         'po_number'           => $poItem->po_number,
         'po_date'             => $poItem->po_date?->format('d/m/Y'),
         'maker'               => $poItem->rfq?->maker ?? '',
-        'exact_delivery_date' => $poItem->exact_delivery_date?->format('d/m/Y'),
-        'incoterm'            => $poItem->incoterm,
-        'dimension'           => $poItem->dimension,
-        'weight'              => $poItem->weight,
-        'expedite'            => $poItem->expedite,
+        'exact_delivery_date'   => $poItem->exact_delivery_date?->format('d/m/Y'),
+        'delivered_date'         => $poItem->delivered_date?->format('d/m/Y'),
+        'contract_delivery_date' => $contract->delivery_date?->format('d/m/Y'),
+        'delivery_diff_days'     => ($poItem->delivered_date && $contract->delivery_date)
+            ? $contract->delivery_date->diffInDays($poItem->delivered_date, false)
+            : null,
+        'incoterm'               => $poItem->incoterm,
+        'dimension'              => $poItem->dimension,
+        'weight'                 => $poItem->weight,
+        'expedite'               => $poItem->expedite,
         'payment_terms'       => $poItem->makerPaymentTerms->sortBy('term_code')->map(fn($m) => [
             'term_code'      => $m->term_code,
             'percentage'     => $m->percentage !== null ? rtrim(rtrim(number_format((float)$m->percentage, 2), '0'), '.') : null,
@@ -939,6 +952,17 @@ function openPoModal(poId) {
     if (po.maker) html += `<div><div class="text-xs text-slate-400 uppercase tracking-wide">Maker</div><div class="font-medium text-slate-800">${po.maker}</div></div>`;
     html += `<div><div class="text-xs text-slate-400 uppercase tracking-wide">D. Date</div><div class="font-medium text-slate-800">${po.exact_delivery_date || '\u2014'}</div></div>`;
     if (po.incoterm) html += `<div><div class="text-xs text-slate-400 uppercase tracking-wide">Incoterm</div><div class="font-medium text-slate-800">${po.incoterm}</div></div>`;
+    if (po.delivered_date) {
+           let diffHtml = '';
+           if (po.delivery_diff_days !== null && po.delivery_diff_days !== undefined) {
+               const d = Number(po.delivery_diff_days);
+               const color = d > 0 ? 'text-red-500' : d < 0 ? 'text-emerald-500' : 'text-slate-400';
+               const sign  = d > 0 ? '+' : '';
+               const label = d > 0 ? 'late' : d < 0 ? 'early' : 'on time';
+               diffHtml = ` <span class="${color} font-semibold">${sign}${d} Days ${label}</span>`;
+           }
+           html += `<div><dt class="text-slate-400">Delivery Difference</dt><dd class="font-medium">${diffHtml}</dd></div>`;
+       }
     html += `</div>`;
 
     // ── Payment terms — table like contract payment terms
@@ -967,7 +991,7 @@ function openPoModal(poId) {
     }
 
     // ── Expedite + WIP side by side
-    const hasExpedite = po.dimension || po.weight || po.incoterm || po.expedite;
+    const hasExpedite = po.dimension || po.weight || po.incoterm || po.expedite || po.delivered_date;
     const hasWip = po.wip_statuses && po.wip_statuses.length;
     if (hasExpedite || hasWip) {
         html += `<div class="rounded-lg border border-slate-100 overflow-hidden mb-4">
@@ -979,7 +1003,8 @@ function openPoModal(poId) {
         if (po.dimension) html += `<div><dt class="text-slate-400">Dimension</dt><dd class="font-medium">${po.dimension}</dd></div>`;
         if (po.weight)    html += `<div><dt class="text-slate-400">Weight</dt><dd class="font-medium">${po.weight}</dd></div>`;
         if (po.incoterm)  html += `<div><dt class="text-slate-400">Incoterm</dt><dd class="font-medium">${po.incoterm}</dd></div>`;
-        if (po.expedite)  html += `<div><dt class="text-slate-400">Note</dt><dd class="font-medium">${po.expedite}</dd></div>`;
+       
+        if (po.expedite)  html += `<div class="col-span-2"><dt class="text-slate-400">Note</dt><dd class="font-medium">${po.expedite}</dd></div>`;
         if (!hasExpedite) html += `<div class="col-span-2 text-slate-300 italic">—</div>`;
         html += `</dl>`;
 

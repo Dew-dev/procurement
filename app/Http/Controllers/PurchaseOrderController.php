@@ -15,10 +15,11 @@ class PurchaseOrderController extends Controller
         return [
             'rfq_id'              => ($item['rfq_id'] ?? '') ?: null,
             'po_number'           => $item['po_number'] ?? null,
-            'po_date'             => $item['po_date'] ?: null,
+            'po_date'             => ($item['po_date'] ?? '') ?: null,
             'po_payment_term'     => $item['po_payment_term'] ?? null,
             'wip_status'          => $item['wip_status'] ?? null,
-            'exact_delivery_date' => $item['exact_delivery_date'] ?: null,
+            'exact_delivery_date' => ($item['exact_delivery_date'] ?? '') ?: null,
+            'delivered_date'      => ($item['delivered_date'] ?? '') ?: null,
             'dimension'           => $item['dimension'] ?? null,
             'weight'              => $item['weight'] ?? null,
             'incoterm'            => $item['incoterm'] ?? null,

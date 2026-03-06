@@ -26,7 +26,7 @@ class RfqController extends Controller
 
             $data = [
                 'rfq_number' => $item['rfq_number'] ?? null,
-                'rfq_date'   => $item['rfq_date'] ?: null,
+                'rfq_date'   => ($item['rfq_date'] ?? '') ?: null,
                 'maker'      => $item['maker'] ?? null,
             ];
 
@@ -35,7 +35,10 @@ class RfqController extends Controller
             if ($id) {
                 Rfq::where('id', $id)->where('contract_id', $contract->id)->update($data);
             } else {
-                $contract->rfqs()->create($data);
+                $contract->rfqs()->updateOrCreate(
+                    ['rfq_number' => $data['rfq_number']],
+                    $data
+                );
             }
         }
 
@@ -49,7 +52,7 @@ class RfqController extends Controller
 
             $data = [
                 'quotation_number' => $item['quotation_number'] ?? null,
-                'quotation_date'   => $item['quotation_date'] ?: null,
+                'quotation_date'   => ($item['quotation_date'] ?? '') ?: null,
                 'maker_name'       => $item['maker_name'] ?? $rfqMakerByIndex[$index] ?? null,
             ];
 
@@ -58,10 +61,13 @@ class RfqController extends Controller
             if ($id) {
                 Quotation::where('id', $id)->where('contract_id', $contract->id)->update($data);
             } else {
-                $contract->quotations()->create($data);
+                $contract->quotations()->updateOrCreate(
+                    ['quotation_number' => $data['quotation_number']],
+                    $data
+                );
             }
         }
 
-        return redirect()->route('contracts.show', $contract)->with('success', 'Inquiry & Quotation berhasil disimpan.');
+        return redirect()->route('contracts.show', $contract)->with('success', 'Procurement & Expedite berhasil disimpan.');
     }
 }

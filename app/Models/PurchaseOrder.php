@@ -20,6 +20,7 @@ class PurchaseOrder extends Model
         'po_payment_term',
         'wip_status',
         'exact_delivery_date',
+        'delivered_date',
         'dimension',
         'weight',
         'incoterm',
@@ -29,8 +30,9 @@ class PurchaseOrder extends Model
     protected function casts(): array
     {
         return [
-            'po_date' => 'date',
+            'po_date'             => 'date',
             'exact_delivery_date' => 'date',
+            'delivered_date'      => 'date',
         ];
     }
 
