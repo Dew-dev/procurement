@@ -961,7 +961,7 @@ function openPoModal(poId) {
                const label = d > 0 ? 'late' : d < 0 ? 'early' : 'on time';
                diffHtml = ` <span class="${color} font-semibold">${sign}${d} Days ${label}</span>`;
            }
-           html += `<div><dt class="text-slate-400">Delivery Difference</dt><dd class="font-medium">${diffHtml}</dd></div>`;
+           html += `<div><dt class="text-slate-400">DELIVERY DIFFERENCE</dt><dd class="font-medium">${diffHtml}</dd></div>`;
        }
     html += `</div>`;
 
