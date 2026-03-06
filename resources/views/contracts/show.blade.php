@@ -24,7 +24,7 @@
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
             <h1 class="text-2xl font-bold text-slate-900">{{ $contract->contract_number }}</h1>
-            <p class="text-slate-500 text-sm mt-0.5">{{ $contract->buyer_name ?: '' }} <span class="font-semibold">{{ $contract->contract_date?->format('d M Y') ?? '' }}</span> / <span class="font-semibold">{{ $contract->delivery_date?->format('d M Y') ?? '' }}</span></p>
+            <p class="text-slate-500 text-sm mt-0.5">{{ $contract->buyer_name ?: '' }} (<span class="font-semibold">Contract Signed: {{ $contract->contract_date?->format('d M Y') ?? '' }}</span> / <span class="font-semibold">Delivery Date: {{ $contract->delivery_date?->format('d M Y') ?? '' }}</span>)</p>
         </div>
         @if($isAdmin)
         <div class="flex gap-2">
@@ -300,7 +300,7 @@
                         <th class="{{ $th }}">Inquiry Date</th>
                         <th class="{{ $th }}">Quotation Number</th>
                         <th class="{{ $th }}">Quotation Date</th>
-                        <th class="{{ $th }}">PO Terkait</th>
+                        <th class="{{ $th }}">PO Number</th>
                         <th class="px-3 py-2 w-8"></th>
                     </tr>
                 </thead>
@@ -369,7 +369,7 @@
                 <th class="{{ $th }}">Inquiry Date</th>
                 <th class="{{ $th }}">Quotation Number</th>
                 <th class="{{ $th }}">Quotation Date</th>
-                <th class="{{ $th }}">PO Terkait</th>
+                <th class="{{ $th }}">PO Number</th>
             </tr></thead>
             <tbody>
             @if($iqRowCount > 0)
@@ -912,6 +912,7 @@ foreach ($contract->purchaseOrders as $poItem) {
             'term_code'      => $m->term_code,
             'percentage'     => $m->percentage !== null ? rtrim(rtrim(number_format((float)$m->percentage, 2), '0'), '.') : null,
             'invoice_number' => $m->invoice_number,
+            'invoice_date'   => $m->invoice_date?->format('d/m/Y'),
             'paid_date'      => $m->paid_date?->format('d/m/Y'),
         ])->values()->toArray(),
         'wip_statuses'        => $poItem->wipStatuses->sortBy('percentage')->map(fn($w) => [
@@ -940,41 +941,85 @@ function openPoModal(poId) {
     if (po.incoterm) html += `<div><div class="text-xs text-slate-400 uppercase tracking-wide">Incoterm</div><div class="font-medium text-slate-800">${po.incoterm}</div></div>`;
     html += `</div>`;
 
-    // ── Payment terms pills
+    // ── Payment terms — table like contract payment terms
     if (po.payment_terms && po.payment_terms.length) {
-        html += `<div class="mb-4"><div class="text-xs text-slate-400 uppercase tracking-wide mb-1.5">Payment</div><div class="flex flex-wrap gap-1.5">`;
-        po.payment_terms.forEach(m => {
-            let label = `<span class="font-medium">${m.term_code}</span>`;
-            if (m.percentage) label += ` <span class="text-slate-500">${m.percentage}%</span>`;
-            if (m.invoice_number) label += ` <span class="text-sky-500">${m.invoice_number}</span>`;
-            if (m.paid_date) label += ` <span class="text-emerald-500">&#10003;</span>`;
-            html += `<span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-700">${label}</span>`;
-        });
-        html += `</div></div>`;
+        html += `<div class="rounded-lg border border-slate-100 overflow-hidden mb-4">
+            <div class="px-4 py-2 bg-slate-50 border-b border-slate-100"><span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Payment Terms</span></div>
+            <table class="w-full text-xs">
+                <thead class="border-b border-slate-100 bg-slate-50">
+                    <tr>
+                        <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Term</th>
+                        <th class="px-3 py-1.5 text-left text-slate-500 font-medium">%</th>
+                        <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Invoice No.</th>
+                        <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Invoice Date</th>
+                        <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Paid Date</th>
+                    </tr>
+                </thead>
+                <tbody>${po.payment_terms.map(m => `<tr class="border-b border-slate-50">
+                    <td class="px-3 py-1.5 font-medium">${m.term_code || '\u2014'}</td>
+                    <td class="px-3 py-1.5">${m.percentage != null ? m.percentage + '%' : '\u2014'}</td>
+                    <td class="px-3 py-1.5">${m.invoice_number || '\u2014'}</td>
+                    <td class="px-3 py-1.5">${m.invoice_date || '\u2014'}</td>
+                    <td class="px-3 py-1.5">${m.paid_date ? '<span class="text-emerald-600">' + m.paid_date + '</span>' : '\u2014'}</td>
+                </tr>`).join('')}</tbody>
+            </table>
+        </div>`;
     }
 
-    // ── WIP Progress pills
-    if (po.wip_statuses && po.wip_statuses.length) {
-        html += `<div class="mb-4"><div class="text-xs text-slate-400 uppercase tracking-wide mb-1.5">WIP Progress</div><div class="flex flex-wrap gap-1.5">`;
-        po.wip_statuses.forEach(w => {
-            html += `<span class="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700">${w.percentage}%${w.status_date ? ` <span class="text-indigo-400 font-normal">${w.status_date}</span>` : ''}</span>`;
-        });
-        html += `</div></div>`;
-    }
+    // ── Expedite + WIP side by side
+    const hasExpedite = po.dimension || po.weight || po.incoterm || po.expedite;
+    const hasWip = po.wip_statuses && po.wip_statuses.length;
+    if (hasExpedite || hasWip) {
+        html += `<div class="rounded-lg border border-slate-100 overflow-hidden mb-4">
+            <div class="px-4 py-2 bg-slate-50 border-b border-slate-100"><span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Expedite</span></div>
+            <div class="flex gap-0 divide-x divide-slate-100">`;
 
-    // ── Expedite details
-    if (po.dimension || po.weight || po.incoterm || po.expedite) {
-        html += `<div class="rounded-lg border border-slate-100 overflow-hidden mb-4"><div class="px-4 py-2 bg-slate-50 border-b border-slate-100"><span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Expedite</span></div><dl class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 text-sm">`;
-        if (po.dimension) html += `<div><dt class="text-xs text-slate-400">Dimension</dt><dd>${po.dimension}</dd></div>`;
-        if (po.weight) html += `<div><dt class="text-xs text-slate-400">Weight</dt><dd>${po.weight}</dd></div>`;
-        if (po.incoterm) html += `<div><dt class="text-xs text-slate-400">Incoterm</dt><dd>${po.incoterm}</dd></div>`;
-        if (po.expedite) html += `<div><dt class="text-xs text-slate-400">Note</dt><dd>${po.expedite}</dd></div>`;
-        html += `</dl></div>`;
+        // Left: expedite fields
+        html += `<dl class="flex-1 grid grid-cols-2 gap-3 p-3 text-xs content-start">`;
+        if (po.dimension) html += `<div><dt class="text-slate-400">Dimension</dt><dd class="font-medium">${po.dimension}</dd></div>`;
+        if (po.weight)    html += `<div><dt class="text-slate-400">Weight</dt><dd class="font-medium">${po.weight}</dd></div>`;
+        if (po.incoterm)  html += `<div><dt class="text-slate-400">Incoterm</dt><dd class="font-medium">${po.incoterm}</dd></div>`;
+        if (po.expedite)  html += `<div><dt class="text-slate-400">Note</dt><dd class="font-medium">${po.expedite}</dd></div>`;
+        if (!hasExpedite) html += `<div class="col-span-2 text-slate-300 italic">—</div>`;
+        html += `</dl>`;
+
+        // Right: WIP table
+        if (hasWip) {
+            html += `<div class="flex-shrink-0 w-48">
+                <table class="w-full text-xs">
+                    <thead class="border-b border-slate-100 bg-slate-50">
+                        <tr>
+                            <th class="px-3 py-1.5 text-left text-slate-500 font-medium">WIP</th>
+                            <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>${po.wip_statuses.map(w => `<tr class="border-b border-slate-50">
+                        <td class="px-3 py-1.5 font-semibold text-indigo-700">${w.percentage}%</td>
+                        <td class="px-3 py-1.5 text-slate-500">${w.status_date || '\u2014'}</td>
+                    </tr>`).join('')}</tbody>
+                </table>
+            </div>`;
+        }
+        html += `</div></div>`;
     }
 
     // ── Shipping docs
     if (po.shipping_docs && po.shipping_docs.length) {
-        html += `<div class="rounded-lg border border-slate-100 overflow-hidden"><div class="px-4 py-2 bg-slate-50 border-b border-slate-100"><span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Shipping Documents</span></div><div class="p-3 flex flex-wrap gap-2">${po.shipping_docs.map(d => `<a href="${d.url}" target="_blank" class="text-sky-600 hover:underline text-sm">${d.name}</a>`).join('')}</div></div>`;
+        html += `<div class="rounded-lg border border-slate-100 overflow-hidden">
+            <div class="px-4 py-2 bg-slate-50 border-b border-slate-100"><span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Shipping Documents</span></div>
+            <table class="w-full text-xs">
+                <thead class="border-b border-slate-100 bg-slate-50">
+                    <tr>
+                        <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Nama Dokumen</th>
+                        <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Link</th>
+                    </tr>
+                </thead>
+                <tbody>${po.shipping_docs.map(d => `<tr class="border-b border-slate-50">
+                    <td class="px-3 py-1.5">${d.name}</td>
+                    <td class="px-3 py-1.5"><a href="${d.url}" target="_blank" class="text-sky-600 hover:underline">Buka &nearr;</a></td>
+                </tr>`).join('')}</tbody>
+            </table>
+        </div>`;
     }
 
     document.getElementById('po-modal-body').innerHTML = html;
