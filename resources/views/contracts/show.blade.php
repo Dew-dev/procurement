@@ -19,8 +19,12 @@
 <div class="mb-5 flex items-center gap-3">
     <a href="{{ route('contracts.index') }}" class="text-slate-400 hover:text-slate-600 text-sm"> Contracts</a>
 </div>
-
-<div class="bg-white rounded-xl border border-slate-200 p-6 mb-7">
+{{-- ── CONTRACT SECTION LABEL ── --}}
+<div class="mb-3 flex items-center gap-3 ">
+    <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xl font-bold uppercase tracking-widest">Contract</span>
+    <div class="flex-1 h-4 rounded-full bg-blue-200"></div>
+</div>
+<div class="p-6 mb-7 bg-blue-50 rounded-xl border border-blue-200 overflow-hidden">
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
             <h1 class="text-2xl font-bold text-slate-900">{{ $contract->contract_number }}</h1>
@@ -49,10 +53,12 @@
 {{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      SECTION 1 CONTRACT PAYMENT TERMS
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
-<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
-    <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-        <h2 class="font-semibold text-slate-800">Contract Payment Terms <span class="text-xs font-normal text-slate-400 ml-1">(buyer side)</span></h2>
-        <span class="text-xs text-slate-400">{{ $contract->contractPaymentTerms->count() }} baris</span>
+
+
+<div class="bg-blue-50 rounded-xl border border-blue-200 mb-6 overflow-hidden">
+    <div class="px-6 py-3 border-b border-blue-100 bg-blue-100 flex justify-between items-center">
+        <h2 class="font-semibold text-blue-800">Contract Payment Terms <span class="text-xs font-normal text-blue-400 ml-1">(buyer side)</span></h2>
+        <span class="text-xs text-blue-400">{{ $contract->contractPaymentTerms->count() }} baris</span>
     </div>
 
     @if($isAdmin)
@@ -123,10 +129,10 @@
 {{-- ═══════════════════════════════════════════════════════════════════════
      SECTION 6 – BG NUMBERS
 ═══════════════════════════════════════════════════════════════════════ --}}
-<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
-    <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-        <h2 class="font-semibold text-slate-800">BG Number</h2>
-        <span class="text-xs text-slate-400">{{ $contract->bgNumbers->count() }} baris</span>
+<div class="bg-blue-50 rounded-xl border border-blue-200 mb-6 overflow-hidden">
+    <div class="px-6 py-3 border-b border-blue-100 bg-blue-100 flex justify-between items-center">
+        <h2 class="font-semibold text-blue-800">BG Number</h2>
+        <span class="text-xs text-blue-400">{{ $contract->bgNumbers->count() }} baris</span>
     </div>
 
     @if($isAdmin)
@@ -193,10 +199,10 @@
 {{-- ═══════════════════════════════════════════════════════════════════════
      SECTION 7 – SURETY BONDS
 ═══════════════════════════════════════════════════════════════════════ --}}
-<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
-    <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-        <h2 class="font-semibold text-slate-800">Surety Bond</h2>
-        <span class="text-xs text-slate-400">{{ $contract->suretyBonds->count() }} baris</span>
+<div class="bg-blue-50 rounded-xl border border-blue-200 mb-6 overflow-hidden">
+    <div class="px-6 py-3 border-b border-blue-100 bg-blue-100 flex justify-between items-center">
+        <h2 class="font-semibold text-blue-800">Surety Bond</h2>
+        <span class="text-xs text-blue-400">{{ $contract->suretyBonds->count() }} baris</span>
     </div>
 
     @if($isAdmin)
@@ -282,10 +288,16 @@
 {{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      SECTION 2 â€” Procurement & Expedite
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
-<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden">
-    <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-        <h2 class="font-semibold text-slate-800">Inquiry &amp; Quotation</h2>
-        <span class="text-xs text-slate-400">{{ $iqRowCount }} baris</span>
+{{-- ── PROCUREMENT & EXPEDITE SECTION LABEL ── --}}
+<div class="mb-3 mt-6 flex items-center gap-3">
+    <span class="px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xl font-bold uppercase tracking-widest">Procurement &amp; Expedite</span>
+    <div class="flex-1 h-4 rounded-full bg-yellow-300"></div>
+</div>
+
+<div class="bg-yellow-50 rounded-xl border border-yellow-200 mb-6 overflow-hidden">
+    <div class="px-6 py-3 border-b border-yellow-100 bg-yellow-100 flex justify-between items-center">
+        <h2 class="font-semibold text-yellow-800">Procurement &amp; Expedite</h2>
+        <span class="text-xs text-yellow-500">{{ $iqRowCount }} baris</span>
     </div>
 
     @if($isAdmin)
@@ -405,10 +417,10 @@
 {{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      SECTION 4 â€” PURCHASE ORDERS (cards layout)
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
-<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden hidden">
-    <div class="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-        <h2 class="font-semibold text-slate-800">Purchase Orders</h2>
-        <span class="text-xs text-slate-400">{{ $contract->purchaseOrders->count() }} PO</span>
+<div class="bg-yellow-50 rounded-xl border border-yellow-200 mb-6 overflow-hidden hidden">
+    <div class="px-6 py-3 border-b border-yellow-100 bg-yellow-100 flex justify-between items-center">
+        <h2 class="font-semibold text-yellow-800">Purchase Orders</h2>
+        <span class="text-xs text-yellow-500">{{ $contract->purchaseOrders->count() }} PO</span>
     </div>
 
     @if($isAdmin)
@@ -643,10 +655,10 @@
      Note: only shown for existing POs. New POs need to be saved first.
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
 @if($contract->purchaseOrders->count() > 0)
-<div class="bg-white rounded-xl border border-slate-200 mb-6 overflow-hidden hidden">
-    <div class="px-6 py-3 border-b border-slate-100 bg-slate-50">
-        <h2 class="font-semibold text-slate-800">Maker Payment Terms</h2>
-        <p class="text-xs text-slate-400 mt-0.5">Per PO  simpan masing-masing secara terpisah</p>
+<div class="bg-yellow-50 rounded-xl border border-yellow-200 mb-6 overflow-hidden hidden">
+    <div class="px-6 py-3 border-b border-yellow-100 bg-yellow-100">
+        <h2 class="font-semibold text-yellow-800">Maker Payment Terms</h2>
+        <p class="text-xs text-yellow-500 mt-0.5">Per PO  simpan masing-masing secara terpisah</p>
     </div>
 
     @foreach($contract->purchaseOrders as $po)
