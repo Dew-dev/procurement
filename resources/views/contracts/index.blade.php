@@ -23,7 +23,7 @@
             </thead>
             <tbody>
                 @forelse ($contracts as $contract)
-                    <tr class="border-t border-slate-100">
+                    <tr class="border-t border-slate-100 hover:bg-blue-100 transition-colors odd:bg-white even:bg-slate-100">
                         <td class="px-4 py-3 font-medium">{{ $contract->contract_number }}</td>
                         <td class="px-4 py-3">{{ $contract->buyer_name ?: '-' }}</td>
                         <td class="px-4 py-3">{{ optional($contract->contract_date)->format('Y-m-d') ?: '-' }}</td>
