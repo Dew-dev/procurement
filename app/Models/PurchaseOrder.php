@@ -61,6 +61,11 @@ class PurchaseOrder extends Model
         return $this->hasMany(PurchaseOrderWipStatus::class)->orderBy('percentage');
     }
 
+    public function purchaseOrderItems(): HasMany
+    {
+        return $this->hasMany(PurchaseOrderItem::class);
+    }
+
     public function syncWipStatuses(?array $payload): void
     {
         if ($payload === null) {

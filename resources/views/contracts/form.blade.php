@@ -57,6 +57,10 @@ $posByRfq = $existingPos->groupBy('rfq_id');
                     <label class="block text-sm font-medium mb-1">Buyer Name</label>
                     <input class="{{ $inp }}" name="buyer_name" value="{{ old('buyer_name', $contract->buyer_name) }}" placeholder="PT. Example">
                 </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Company Name</label>
+                    <input class="{{ $inp }}" name="company_name" value="{{ old('company_name', $contract->company_name) }}" placeholder="PT. Company">
+                </div>
             </div>
             <h6 class="font-semibold"> Inquiry to Maker</h6>
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -135,6 +139,60 @@ $posByRfq = $existingPos->groupBy('rfq_id');
             <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="contract_payment_terms[__IDX__][invoice_date]"></td>
             <td class="{{ $td }}"><input class="{{ $inp }}" type="date" name="contract_payment_terms[__IDX__][paid_date]"></td>
             <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'cpt-tbody','cpt-empty-msg')" class="{{ $btnDel }}">×</button></td>
+        </tr>
+    </template>
+
+    {{-- CONTRACT ITEMS --}}
+    @php $existingCis = $isEdit ? $contract->contractItems : collect(); @endphp
+    <div class="{{ $section }}">
+        <div class="{{ $secHead }}">
+            <h2 class="font-semibold text-slate-800">Contract Items <span class="text-xs font-normal text-slate-400 ml-1">(daftar barang)</span></h2>
+            <button type="button" onclick="addRow('ci-tbody','ci-tpl',ctrs,'ci')" class="{{ $btnAdd }}">+ Tambah</button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="border-b border-slate-100">
+                    <tr>
+                        <th class="{{ $th }}">Nama Item</th>
+                        <th class="{{ $th }}">Deskripsi</th>
+                        <th class="{{ $th }}">Qty</th>
+                        <th class="{{ $th }}">Unit</th>
+                        <th class="{{ $th }}">Unit Price</th>
+                        <th class="{{ $th }}">Currency</th>
+                        <th class="w-10"></th>
+                    </tr>
+                </thead>
+                <tbody id="ci-tbody">
+                    @foreach($existingCis as $i => $ci)
+                    <tr class="border-b border-slate-50 hover:bg-slate-50">
+                        <td class="{{ $td }}">
+                            <input type="hidden" name="contract_items[{{ $i }}][id]" value="{{ $ci->id }}">
+                            <input class="{{ $inp }}" type="text" name="contract_items[{{ $i }}][item_name]" value="{{ $ci->item_name }}" placeholder="Nama barang">
+                        </td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[{{ $i }}][description]" value="{{ $ci->description }}" placeholder="Deskripsi"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="contract_items[{{ $i }}][qty]" value="{{ $ci->qty }}" placeholder="0"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[{{ $i }}][unit]" value="{{ $ci->unit }}" placeholder="pcs, set"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="contract_items[{{ $i }}][unit_price]" value="{{ $ci->unit_price }}" placeholder="0"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[{{ $i }}][currency]" value="{{ $ci->currency }}" placeholder="USD"></td>
+                        <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'ci-tbody','ci-empty-msg')" class="{{ $btnDel }}">×</button></td>
+                    </tr>
+                    @endforeach
+                    <tr class="border-b border-slate-50" id="ci-empty-msg" {{ $existingCis->isNotEmpty() ? ' style="display:none"' : '' }}>
+                        <td colspan="7" class="px-3 py-3 text-center text-slate-400 text-sm italic">Klik "+ Tambah" untuk menambah baris</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <template id="ci-tpl">
+        <tr class="border-b border-slate-50 hover:bg-slate-50">
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[__IDX__][item_name]" placeholder="Nama barang"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[__IDX__][description]" placeholder="Deskripsi"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="contract_items[__IDX__][qty]" placeholder="0"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[__IDX__][unit]" placeholder="pcs, set"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="contract_items[__IDX__][unit_price]" placeholder="0"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[__IDX__][currency]" placeholder="USD"></td>
+            <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'ci-tbody','ci-empty-msg')" class="{{ $btnDel }}">×</button></td>
         </tr>
     </template>
 
@@ -430,6 +488,45 @@ $posByRfq = $existingPos->groupBy('rfq_id');
                         </tbody>
                     </table>
                 </div>
+                {{-- PO Items sub-section --}}
+                <div class="rounded-lg border border-slate-100 overflow-hidden mt-3">
+                    <div class="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Items yang Di-PO</span>
+                        <button type="button" onclick="addPoItemRowForm(this,'{{ $pi }}')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+ Tambah</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead class="border-b border-slate-100">
+                                <tr>
+                                    <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Item</th>
+                                    <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Qty</th>
+                                    <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Notes</th>
+                                    <th class="w-8"></th>
+                                </tr>
+                            </thead>
+                            <tbody data-poi-form-tbody="{{ $pi }}">
+                            @forelse($po->purchaseOrderItems as $poi_i => $poi)
+                            <tr class="border-b border-slate-50 hover:bg-slate-50">
+                                <td class="px-3 py-1.5">
+                                    <input type="hidden" name="purchase_orders[{{ $pi }}][po_items][{{ $poi_i }}][id]" value="{{ $poi->id }}" data-poi-form-id>
+                                    <select class="{{ $inp }}" name="purchase_orders[{{ $pi }}][po_items][{{ $poi_i }}][contract_item_id]">
+                                        <option value="">— Pilih item —</option>
+                                        @foreach($existingCis as $ci)
+                                        <option value="{{ $ci->id }}" {{ $poi->contract_item_id == $ci->id ? 'selected' : '' }}>{{ $ci->item_name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td class="px-3 py-1.5"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="purchase_orders[{{ $pi }}][po_items][{{ $poi_i }}][qty]" value="{{ $poi->qty }}" placeholder="0"></td>
+                                <td class="px-3 py-1.5"><input class="{{ $inp }}" type="text" name="purchase_orders[{{ $pi }}][po_items][{{ $poi_i }}][notes]" value="{{ $poi->notes }}" placeholder="Catatan"></td>
+                                <td class="px-3 py-1.5"><button type="button" onclick="this.closest('tr').remove()" class="w-6 h-6 flex items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-200 text-xs font-bold">&times;</button></td>
+                            </tr>
+                            @empty
+                            <tr data-poi-form-empty><td colspan="4" class="px-3 py-2 text-center text-slate-400 italic">Belum ada items</td></tr>
+                            @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
             @endforeach
             <p id="po-empty-msg" class="px-5 py-3 text-center text-slate-400 text-sm italic" {{ $existingPos->isNotEmpty() ? ' style="display:none"' : '' }}>Klik "+ Tambah PO" untuk menambah Purchase Order</p>
@@ -527,6 +624,28 @@ $posByRfq = $existingPos->groupBy('rfq_id');
                     </tbody>
                 </table>
             </div>
+            {{-- PO Items sub-section (template) --}}
+            <div class="rounded-lg border border-slate-100 overflow-hidden mt-3">
+                <div class="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Items yang Di-PO</span>
+                    <button type="button" onclick="addPoItemRowForm(this,'__PO__')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+ Tambah</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead class="border-b border-slate-100">
+                            <tr>
+                                <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Item</th>
+                                <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Qty</th>
+                                <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Notes</th>
+                                <th class="w-8"></th>
+                            </tr>
+                        </thead>
+                        <tbody data-poi-form-tbody="__PO__">
+                            <tr data-poi-form-empty><td colspan="4" class="px-3 py-2 text-center text-slate-400 italic">Belum ada items</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </template>
 
@@ -564,8 +683,12 @@ $posByRfq = $existingPos->groupBy('rfq_id');
         iq: {{ $iqRowCount }},
         po: {{$existingPos->count()}},
         bg: {{$existingBgs->count()}},
-        sb: {{$existingSbs->count()}}
+        sb: {{$existingSbs->count()}},
+        ci: {{$existingCis->count()}}
     };
+
+    const contractItemsForForm = @json($existingCis->map(fn($ci) => ['id' => $ci->id, 'name' => $ci->item_name]));
+    const contractItemOptionsForForm = contractItemsForForm.map(ci => `<option value="${ci.id}">${ci.name}</option>`).join('');
 
     function addRow(tbodyId, tplId, countersObj, key) {
         const tbody = document.getElementById(tbodyId);
@@ -654,8 +777,27 @@ $posByRfq = $existingPos->groupBy('rfq_id');
         }
     }
 
-    function addWipRowForm(btn, poIdx) {
-        const tbody = btn.closest('.rounded-lg').querySelector('[data-wip-tbody]');
+    function addPoItemRowForm(btn, poIdx) {
+        const tbody = btn.closest('.rounded-lg').querySelector('[data-poi-form-tbody]');
+        if (!tbody) return;
+        const emptyRow = tbody.querySelector('[data-poi-form-empty]');
+        if (emptyRow) emptyRow.style.display = 'none';
+        const rowCount = tbody.querySelectorAll('tr:not([data-poi-form-empty])').length;
+        const inp = 'border border-slate-200 rounded px-2 py-1 text-sm w-full focus:outline-none focus:border-indigo-400 bg-white';
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-slate-50 hover:bg-slate-50';
+        tr.innerHTML = `<td class="px-3 py-1.5">
+            <select class="${inp}" name="purchase_orders[${poIdx}][po_items][${rowCount}][contract_item_id]">
+                <option value="">— Pilih item —</option>${contractItemOptionsForForm}
+            </select></td>
+            <td class="px-3 py-1.5"><input class="${inp}" type="number" step="0.01" min="0" name="purchase_orders[${poIdx}][po_items][${rowCount}][qty]" placeholder="0"></td>
+            <td class="px-3 py-1.5"><input class="${inp}" type="text" name="purchase_orders[${poIdx}][po_items][${rowCount}][notes]" placeholder="Catatan"></td>
+            <td class="px-3 py-1.5"><button type="button" onclick="this.closest('tr').remove()" class="w-6 h-6 flex items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-200 text-xs font-bold">&times;</button></td>`;
+        tbody.appendChild(tr);
+        tr.querySelector('select')?.focus();
+    }
+
+    function addWipRowForm(btn, poIdx) {        const tbody = btn.closest('.rounded-lg').querySelector('[data-wip-tbody]');
         if (!tbody) return;
         const emptyRow = tbody.querySelector('[data-wip-empty]');
         if (emptyRow) emptyRow.style.display = 'none';

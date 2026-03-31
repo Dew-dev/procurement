@@ -9,11 +9,21 @@ use Illuminate\Validation\Rule;
 
 class ContractController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $contracts = Contract::latest()->paginate(15);
+        $search    = $request->input('search');
+        $sortBy    = in_array($request->input('sort'), ['created_at', 'contract_number', 'buyer_name', 'company_name', 'contract_date', 'delivery_date']) ? $request->input('sort') : 'created_at';
+        $direction = $request->input('direction') === 'asc' ? 'asc' : 'desc';
 
-        return view('contracts.index', compact('contracts'));
+        $contracts = Contract::query()
+            ->when($search, fn ($q) => $q->where('contract_number', 'like', "%{$search}%")
+                ->orWhere('buyer_name', 'like', "%{$search}%")
+                ->orWhere('company_name', 'like', "%{$search}%"))
+            ->orderBy($sortBy, $direction)
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('contracts.index', compact('contracts', 'search', 'sortBy', 'direction'));
     }
 
     public function create()
@@ -29,6 +39,7 @@ class ContractController extends Controller
         $data = $request->validate([
             'contract_number'    => ['required', 'string', 'max:100', 'unique:contracts,contract_number'],
             'buyer_name'         => ['nullable', 'string', 'max:150'],
+            'company_name'       => ['nullable', 'string', 'max:150'],
             'rfq_from_buyer'     => ['nullable', 'date'],
             'rfq_number'         => ['nullable', 'string', 'max:100'],
             'quotation_to_buyer' => ['nullable', 'date'],
@@ -115,6 +126,28 @@ class ContractController extends Controller
                     $po->shippingDocuments()->create(['name' => $docName, 'file_path' => $path]);
                 }
             }
+            // PO Items
+            foreach ($item['po_items'] ?? [] as $poItem) {
+                if (empty($poItem['contract_item_id'])) continue;
+                $po->purchaseOrderItems()->create([
+                    'contract_item_id' => $poItem['contract_item_id'],
+                    'qty'              => ($poItem['qty'] ?? '') !== '' ? $poItem['qty'] : null,
+                    'notes'            => $poItem['notes'] ?? null,
+                ]);
+            }
+        }
+
+        // Contract Items
+        foreach ($request->input('contract_items', []) as $ciItem) {
+            if (empty($ciItem['item_name'])) continue;
+            $contract->contractItems()->create([
+                'item_name'   => $ciItem['item_name'],
+                'description' => $ciItem['description'] ?? null,
+                'qty'         => ($ciItem['qty'] ?? '') !== '' ? $ciItem['qty'] : null,
+                'unit'        => $ciItem['unit'] ?? null,
+                'unit_price'  => ($ciItem['unit_price'] ?? '') !== '' ? $ciItem['unit_price'] : null,
+                'currency'    => $ciItem['currency'] ?? null,
+            ]);
         }
 
         // BG Numbers
@@ -149,9 +182,11 @@ class ContractController extends Controller
             'purchaseOrders.makerPaymentTerms',
             'purchaseOrders.shippingDocuments',
             'purchaseOrders.wipStatuses',
+            'purchaseOrders.purchaseOrderItems.contractItem',
             'contractPaymentTerms',
             'bgNumbers',
             'suretyBonds',
+            'contractItems',
         ]);
 
         return view('contracts.show', compact('contract'));
@@ -166,9 +201,11 @@ class ContractController extends Controller
             'purchaseOrders.makerPaymentTerms',
             'purchaseOrders.shippingDocuments',
             'purchaseOrders.wipStatuses',
+            'purchaseOrders.purchaseOrderItems.contractItem',
             'contractPaymentTerms',
             'bgNumbers',
             'suretyBonds',
+            'contractItems',
         ]);
 
         return view('contracts.form', [
@@ -182,6 +219,7 @@ class ContractController extends Controller
         $data = $request->validate([
             'contract_number'    => ['required', 'string', 'max:100', Rule::unique('contracts', 'contract_number')->ignore($contract->id)],
             'buyer_name'         => ['nullable', 'string', 'max:150'],
+            'company_name'       => ['nullable', 'string', 'max:150'],
             'rfq_from_buyer'     => ['nullable', 'date'],
             'rfq_number'         => ['nullable', 'string', 'max:100'],
             'quotation_to_buyer' => ['nullable', 'date'],
@@ -324,6 +362,27 @@ class ContractController extends Controller
                     $po->shippingDocuments()->create(['name' => $docName, 'file_path' => $path]);
                 }
             }
+            // PO Items (sync)
+            if ($po) {
+                $submittedPoItemIds = [];
+                foreach ($item['po_items'] ?? [] as $poItem) {
+                    $poItemId = $poItem['id'] ?? null;
+                    if (!$poItemId && empty($poItem['contract_item_id'])) continue;
+                    $poItemData = [
+                        'contract_item_id' => $poItem['contract_item_id'] ?? null,
+                        'qty'              => ($poItem['qty'] ?? '') !== '' ? $poItem['qty'] : null,
+                        'notes'            => $poItem['notes'] ?? null,
+                    ];
+                    if ($poItemId) {
+                        $po->purchaseOrderItems()->where('id', $poItemId)->update($poItemData);
+                        $submittedPoItemIds[] = (int) $poItemId;
+                    } else {
+                        $new = $po->purchaseOrderItems()->create($poItemData);
+                        $submittedPoItemIds[] = $new->id;
+                    }
+                }
+                $po->purchaseOrderItems()->whereNotIn('id', $submittedPoItemIds ?: [0])->delete();
+            }
         }
         $contract->purchaseOrders()->whereNotIn('id', $submittedPoIds ?: [0])->delete();
 
@@ -366,6 +425,29 @@ class ContractController extends Controller
             }
         }
         $contract->suretyBonds()->whereNotIn('id', $submittedSbIds ?: [0])->delete();
+
+        // ── Contract Items (sync) ─────────────────────────────────────────
+        $submittedCiIds = [];
+        foreach ($request->input('contract_items', []) as $ciItem) {
+            $ciId = $ciItem['id'] ?? null;
+            if (!$ciId && empty($ciItem['item_name'])) continue;
+            $ciData = [
+                'item_name'   => $ciItem['item_name'] ?? null,
+                'description' => $ciItem['description'] ?? null,
+                'qty'         => ($ciItem['qty'] ?? '') !== '' ? $ciItem['qty'] : null,
+                'unit'        => $ciItem['unit'] ?? null,
+                'unit_price'  => ($ciItem['unit_price'] ?? '') !== '' ? $ciItem['unit_price'] : null,
+                'currency'    => $ciItem['currency'] ?? null,
+            ];
+            if ($ciId) {
+                $contract->contractItems()->where('id', $ciId)->update($ciData);
+                $submittedCiIds[] = (int) $ciId;
+            } else {
+                $new = $contract->contractItems()->create($ciData);
+                $submittedCiIds[] = $new->id;
+            }
+        }
+        $contract->contractItems()->whereNotIn('id', $submittedCiIds ?: [0])->delete();
 
         return redirect()->route('contracts.show', $contract)->with('success', 'Contract berhasil diperbarui.');
     }

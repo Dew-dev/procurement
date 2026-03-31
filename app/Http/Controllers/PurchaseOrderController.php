@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Contract;
 use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderItem;
 use App\Models\ShippingDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -77,6 +78,28 @@ class PurchaseOrderController extends Controller
                 if ($file && $file->isValid()) {
                     $path = $file->store('shipping-docs', 'public');
                     $po->shippingDocuments()->create(['name' => $docName, 'file_path' => $path]);
+                }
+            }
+
+            // Sync PO items
+            if (isset($item['po_items']) && $po) {
+                foreach ($item['po_items'] as $poItem) {
+                    $poItemId = $poItem['id'] ?? null;
+                    if (!empty($poItem['_delete'])) {
+                        if ($poItemId) PurchaseOrderItem::where('id', $poItemId)->where('purchase_order_id', $po->id)->delete();
+                        continue;
+                    }
+                    if (empty($poItem['contract_item_id'])) continue;
+                    $poItemData = [
+                        'contract_item_id' => $poItem['contract_item_id'],
+                        'qty'   => ($poItem['qty'] ?? '') !== '' ? $poItem['qty'] : null,
+                        'notes' => $poItem['notes'] ?? null,
+                    ];
+                    if ($poItemId) {
+                        PurchaseOrderItem::where('id', $poItemId)->where('purchase_order_id', $po->id)->update($poItemData);
+                    } else {
+                        $po->purchaseOrderItems()->create($poItemData);
+                    }
                 }
             }
         }

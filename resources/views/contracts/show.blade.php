@@ -28,7 +28,13 @@
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
             <h1 class="text-2xl font-bold text-slate-900">{{ $contract->contract_number }}</h1>
-            <p class="text-slate-500 text-sm mt-0.5">{{ $contract->buyer_name ?: '' }} (<span class="font-semibold">Contract Signed: {{ $contract->contract_date?->format('d M Y') ?? '' }}</span> / <span class="font-semibold">Delivery Date: {{ $contract->delivery_date?->format('d M Y') ?? '' }}</span>)</p>
+            <p class="text-slate-500 text-sm mt-0.5">
+                {{ $contract->buyer_name ?: '' }}
+                @if($contract->company_name)
+                    &mdash; <span class="font-medium">{{ $contract->company_name }}</span>
+                @endif
+                (<span class="font-semibold">Contract Signed: {{ $contract->contract_date?->format('d M Y') ?? '' }}</span> / <span class="font-semibold">Delivery Date: {{ $contract->delivery_date?->format('d M Y') ?? '' }}</span>)
+            </p>
         </div>
         @if($isAdmin)
         <div class="flex gap-2">
@@ -120,6 +126,81 @@
             <tr class="border-b border-slate-50"><td class="{{ $td }}">{{ $cpt->term_code ?: '' }}</td><td class="{{ $td }}">{{ $cpt->percentage !== null ? $cpt->percentage.'%' : '' }}</td><td class="{{ $td }}">{{ $cpt->invoice_number ?: '' }}</td><td class="{{ $td }}">{{ $cpt->invoice_date?->format('d/m/Y') ?? '' }}</td><td class="{{ $td }}">{{ $cpt->paid_date?->format('d/m/Y') ?? '' }}</td></tr>
             @empty
             <tr><td colspan="5" class="px-4 py-4 text-center text-slate-400 text-sm">Belum ada data</td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
+    @endif
+</div>
+{{-- ═══════════════════════════════════════════════════════════════════════
+     SECTION – CONTRACT ITEMS (daftar barang)
+═══════════════════════════════════════════════════════════════════════ --}}
+<div class="bg-blue-50 rounded-xl border border-blue-200 mb-6 overflow-hidden">
+    <div class="px-6 py-3 border-b border-blue-100 bg-blue-100 flex justify-between items-center">
+        <h2 class="font-semibold text-blue-800">Contract Items <span class="text-xs font-normal text-blue-400 ml-1">(daftar barang)</span></h2>
+        <span class="text-xs text-blue-400">{{ $contract->contractItems->count() }} baris</span>
+    </div>
+
+    @if($isAdmin)
+    <form method="POST" action="{{ route('contracts.contract-items.upsert', $contract) }}">
+        @csrf @method('PUT')
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="border-b border-slate-100">
+                    <tr>
+                        <th class="{{ $th }}">Nama Item</th>
+                        <th class="{{ $th }}">Deskripsi</th>
+                        <th class="{{ $th }}">Qty</th>
+                        <th class="{{ $th }}">Unit</th>
+                        <th class="{{ $th }}">Unit Price</th>
+                        <th class="{{ $th }}">Currency</th>
+                        <th class="px-3 py-2 w-8"></th>
+                    </tr>
+                </thead>
+                <tbody id="ci-tbody">
+                @foreach($contract->contractItems as $i => $ci)
+                <tr class="border-b border-slate-50 hover:bg-slate-50">
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][item_name]" value="{{ $ci->item_name }}" placeholder="Nama barang"><input type="hidden" name="items[{{ $i }}][id]" value="{{ $ci->id }}" data-row-id></td>
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][description]" value="{{ $ci->description }}" placeholder="Deskripsi"></td>
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="items[{{ $i }}][qty]" value="{{ $ci->qty }}" placeholder="0"></td>
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][unit]" value="{{ $ci->unit }}" placeholder="pcs, set, unit"></td>
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="items[{{ $i }}][unit_price]" value="{{ $ci->unit_price }}" placeholder="0"></td>
+                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][currency]" value="{{ $ci->currency }}" placeholder="USD"></td>
+                    <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
+                </tr>
+                @endforeach
+                </tbody>
+            </table>
+        </div>
+        <div class="px-4 py-3 flex gap-2 border-t border-slate-100">
+            <button type="button" onclick="addRow('ci-tbody','ci-row-tpl',counters,'ci')" class="{{ $btnAdd }}">+ Tambah Baris</button>
+            <button type="submit" class="{{ $btnSave }}">Simpan</button>
+        </div>
+    </form>
+
+    <template id="ci-row-tpl">
+        <tr class="border-b border-slate-50 hover:bg-slate-50">
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][item_name]" placeholder="Nama barang"><input type="hidden" name="items[__IDX__][id]" value="" data-row-id></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][description]" placeholder="Deskripsi"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="items[__IDX__][qty]" placeholder="0"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][unit]" placeholder="pcs, set, unit"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="items[__IDX__][unit_price]" placeholder="0"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][currency]" placeholder="USD"></td>
+            <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
+        </tr>
+    </template>
+
+    @else
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="border-b border-slate-100"><tr>
+                <th class="{{ $th }}">Nama Item</th><th class="{{ $th }}">Deskripsi</th><th class="{{ $th }}">Qty</th><th class="{{ $th }}">Unit</th><th class="{{ $th }}">Unit Price</th><th class="{{ $th }}">Currency</th>
+            </tr></thead>
+            <tbody>
+            @forelse($contract->contractItems as $ci)
+            <tr class="border-b border-slate-50"><td class="{{ $td }}">{{ $ci->item_name }}</td><td class="{{ $td }}">{{ $ci->description ?: '' }}</td><td class="{{ $td }}">{{ $ci->qty !== null ? $ci->qty : '' }}</td><td class="{{ $td }}">{{ $ci->unit ?: '' }}</td><td class="{{ $td }}">{{ $ci->unit_price !== null ? number_format($ci->unit_price, 2) : '' }}</td><td class="{{ $td }}">{{ $ci->currency ?: '' }}</td></tr>
+            @empty
+            <tr><td colspan="6" class="px-4 py-4 text-center text-slate-400 text-sm">Belum ada data</td></tr>
             @endforelse
             </tbody>
         </table>
@@ -532,6 +613,45 @@
                     </div>
                 </div>
             </div>
+            {{-- PO Items sub-section --}}
+            <div class="rounded-lg border border-slate-100 overflow-hidden mt-3">
+                <div class="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Items yang Di-PO</span>
+                    <button type="button" onclick="addPoItemRow(this,'{{ $i }}')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+ Tambah</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead class="border-b border-slate-100">
+                            <tr>
+                                <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Item</th>
+                                <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Qty</th>
+                                <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Notes</th>
+                                <th class="w-8"></th>
+                            </tr>
+                        </thead>
+                        <tbody data-poi-tbody="{{ $i }}">
+                        @forelse($po->purchaseOrderItems as $pi => $poi)
+                        <tr class="border-b border-slate-50 hover:bg-slate-50">
+                            <td class="px-3 py-1.5">
+                                <input type="hidden" name="items[{{ $i }}][po_items][{{ $pi }}][id]" value="{{ $poi->id }}" data-poi-id>
+                                <select class="{{ $inp }}" name="items[{{ $i }}][po_items][{{ $pi }}][contract_item_id]">
+                                    <option value="">— Pilih item —</option>
+                                    @foreach($contract->contractItems as $ci)
+                                    <option value="{{ $ci->id }}" {{ $poi->contract_item_id == $ci->id ? 'selected' : '' }}>{{ $ci->item_name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td class="px-3 py-1.5"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="items[{{ $i }}][po_items][{{ $pi }}][qty]" value="{{ $poi->qty }}" placeholder="0"></td>
+                            <td class="px-3 py-1.5"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][po_items][{{ $pi }}][notes]" value="{{ $poi->notes }}" placeholder="Catatan"></td>
+                            <td class="px-3 py-1.5"><button type="button" onclick="removePoItemRow(this)" class="w-6 h-6 flex items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-200 text-xs font-bold">×</button></td>
+                        </tr>
+                        @empty
+                        <tr data-poi-empty><td colspan="4" class="px-3 py-2 text-center text-slate-400 italic">Belum ada items</td></tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
         @endforeach
         </div>
@@ -629,6 +749,28 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+            {{-- PO Items sub-section (template) --}}
+            <div class="rounded-lg border border-slate-100 overflow-hidden mt-3">
+                <div class="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Items yang Di-PO</span>
+                    <button type="button" onclick="addPoItemRow(this,'__IDX__')" class="text-xs px-2 py-1 rounded bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium">+ Tambah</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead class="border-b border-slate-100">
+                            <tr>
+                                <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Item</th>
+                                <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Qty</th>
+                                <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Notes</th>
+                                <th class="w-8"></th>
+                            </tr>
+                        </thead>
+                        <tbody data-poi-tbody="__IDX__">
+                            <tr data-poi-empty><td colspan="4" class="px-3 py-2 text-center text-slate-400 italic">Belum ada items</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -759,7 +901,17 @@ const counters = {
     po:  {{ $contract->purchaseOrders->count() }},
     bg:  {{ $contract->bgNumbers->count() }},
     sb:  {{ $contract->suretyBonds->count() }},
+    ci:  {{ $contract->contractItems->count() }},
 };
+
+const poItemCounters = {
+    @foreach($contract->purchaseOrders as $po)
+    {{ $po->id }}: {{ $po->purchaseOrderItems->count() }},
+    @endforeach
+};
+
+const contractItems = @json($contract->contractItems->map(fn($ci) => ['id' => $ci->id, 'name' => $ci->item_name]));
+const contractItemOptions = contractItems.map(ci => `<option value="${ci.id}">${ci.name}</option>`).join('');
 
 const mptCounters = {
     @foreach($contract->purchaseOrders as $po)
@@ -882,8 +1034,57 @@ function removePoCard(btn) {
     }
 }
 
-function addWipRow(btn, poIdx) {
-    const tbody = btn.closest('.rounded-lg').querySelector('[data-wip-tbody]');
+function addPoItemRow(btn, poIdx) {
+    const tbody = btn.closest('.rounded-lg').querySelector('[data-poi-tbody]');
+    if (!tbody) return;
+    const emptyRow = tbody.querySelector('[data-poi-empty]');
+    if (emptyRow) emptyRow.style.display = 'none';
+    if (!poItemCounters[poIdx]) poItemCounters[poIdx] = tbody.querySelectorAll('tr:not([data-poi-empty])').length;
+    const rowCount = poItemCounters[poIdx]++;
+    const inp = 'border border-slate-200 rounded px-2 py-1 text-sm w-full focus:outline-none focus:border-indigo-400 bg-white';
+    const tr = document.createElement('tr');
+    tr.className = 'border-b border-slate-50 hover:bg-slate-50';
+    tr.innerHTML = `<td class="px-3 py-1.5">
+        <input type="hidden" name="items[${poIdx}][po_items][${rowCount}][id]" value="" data-poi-id>
+        <select class="${inp}" name="items[${poIdx}][po_items][${rowCount}][contract_item_id]">
+            <option value="">— Pilih item —</option>${contractItemOptions}
+        </select></td>
+        <td class="px-3 py-1.5"><input class="${inp}" type="number" step="0.01" min="0" name="items[${poIdx}][po_items][${rowCount}][qty]" placeholder="0"></td>
+        <td class="px-3 py-1.5"><input class="${inp}" type="text" name="items[${poIdx}][po_items][${rowCount}][notes]" placeholder="Catatan"></td>
+        <td class="px-3 py-1.5"><button type="button" onclick="removePoItemRow(this)" class="w-6 h-6 flex items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-200 text-xs font-bold">&times;</button></td>`;
+    tbody.appendChild(tr);
+    tr.querySelector('select')?.focus();
+}
+
+function removePoItemRow(btn) {
+    const tr = btn.closest('tr');
+    const idInput = tr.querySelector('[data-poi-id]');
+    if (idInput?.value) {
+        const isMarked = tr.dataset.markedDelete === '1';
+        if (isMarked) {
+            delete tr.dataset.markedDelete;
+            tr.classList.remove('opacity-40');
+            tr.querySelectorAll('input[data-del-flag]').forEach(el => el.remove());
+            tr.querySelectorAll('input:not([data-poi-id]):not([type=hidden]), select').forEach(el => el.disabled = false);
+            btn.textContent = '×';
+        } else {
+            tr.dataset.markedDelete = '1';
+            tr.classList.add('opacity-40');
+            const del = document.createElement('input');
+            del.type = 'hidden';
+            del.name = idInput.name.replace('[id]', '[_delete]');
+            del.value = '1';
+            del.dataset.delFlag = '';
+            tr.appendChild(del);
+            tr.querySelectorAll('input:not([data-poi-id]):not([type=hidden]), select').forEach(el => el.disabled = true);
+            btn.textContent = '↩';
+        }
+    } else {
+        tr.remove();
+    }
+}
+
+function addWipRow(btn, poIdx) {    const tbody = btn.closest('.rounded-lg').querySelector('[data-wip-tbody]');
     if (!tbody) return;
     const emptyRow = tbody.querySelector('[data-wip-empty]');
     if (emptyRow) emptyRow.style.display = 'none';
@@ -939,6 +1140,12 @@ foreach ($contract->purchaseOrders as $poItem) {
             'invoice_number' => $m->invoice_number,
             'invoice_date'   => $m->invoice_date?->format('d/m/Y'),
             'paid_date'      => $m->paid_date?->format('d/m/Y'),
+        ])->values()->toArray(),
+        'po_items'            => $poItem->purchaseOrderItems->map(fn($pi) => [
+            'item_name' => $pi->contractItem?->item_name ?? '—',
+            'qty'       => $pi->qty,
+            'unit'      => $pi->contractItem?->unit ?? '',
+            'notes'     => $pi->notes,
         ])->values()->toArray(),
         'wip_statuses'        => $poItem->wipStatuses->sortBy('percentage')->map(fn($w) => [
             'percentage'  => $w->percentage,
@@ -1054,6 +1261,29 @@ function openPoModal(poId) {
                 <tbody>${po.shipping_docs.map(d => `<tr class="border-b border-slate-50">
                     <td class="px-3 py-1.5">${d.name}</td>
                     <td class="px-3 py-1.5"><a href="${d.url}" target="_blank" class="text-sky-600 hover:underline">Buka &nearr;</a></td>
+                </tr>`).join('')}</tbody>
+            </table>
+        </div>`;
+    }
+
+    // ── PO Items
+    if (po.po_items && po.po_items.length) {
+        html += `<div class="rounded-lg border border-slate-100 overflow-hidden mt-4">
+            <div class="px-4 py-2 bg-slate-50 border-b border-slate-100"><span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Items yang Di-PO</span></div>
+            <table class="w-full text-xs">
+                <thead class="border-b border-slate-100 bg-slate-50">
+                    <tr>
+                        <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Item</th>
+                        <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Qty</th>
+                        <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Unit</th>
+                        <th class="px-3 py-1.5 text-left text-slate-500 font-medium">Notes</th>
+                    </tr>
+                </thead>
+                <tbody>${po.po_items.map(it => `<tr class="border-b border-slate-50">
+                    <td class="px-3 py-1.5 font-medium">${it.item_name}</td>
+                    <td class="px-3 py-1.5">${it.qty ?? '\u2014'}</td>
+                    <td class="px-3 py-1.5">${it.unit || ''}</td>
+                    <td class="px-3 py-1.5 text-slate-400">${it.notes || ''}</td>
                 </tr>`).join('')}</tbody>
             </table>
         </div>`;

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BgNumberController;
 use App\Http\Controllers\ContractController;
+use App\Http\Controllers\ContractItemController;
 use App\Http\Controllers\ContractPaymentTermController;
 use App\Http\Controllers\MakerPaymentTermController;
 use App\Http\Controllers\PurchaseOrderController;
@@ -38,6 +39,7 @@ Route::middleware('auth')->group(function () {
         Route::put('contracts/{contract}/purchase-orders/{purchaseOrder}/maker-payment-terms', [MakerPaymentTermController::class, 'upsert'])->name('contracts.purchase-orders.maker-payment-terms.upsert');
         Route::put('contracts/{contract}/bg-numbers', [BgNumberController::class, 'upsert'])->name('contracts.bg-numbers.upsert');
         Route::put('contracts/{contract}/surety-bonds', [SuretyBondController::class, 'upsert'])->name('contracts.surety-bonds.upsert');
+        Route::put('contracts/{contract}/contract-items', [ContractItemController::class, 'upsert'])->name('contracts.contract-items.upsert');
     });
 
     // --- Read-only routes (all authenticated users) ---

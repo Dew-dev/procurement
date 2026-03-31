@@ -13,6 +13,7 @@ class Contract extends Model
     protected $fillable = [
         'contract_number',
         'buyer_name',
+        'company_name',
         'rfq_from_buyer',
         'rfq_number',
         'quotation_to_buyer',
@@ -59,5 +60,10 @@ class Contract extends Model
     public function suretyBonds(): HasMany
     {
         return $this->hasMany(SuretyBond::class);
+    }
+
+    public function contractItems(): HasMany
+    {
+        return $this->hasMany(ContractItem::class);
     }
 }
