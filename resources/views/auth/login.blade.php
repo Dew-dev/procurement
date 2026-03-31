@@ -42,10 +42,10 @@
             <button type="submit" class="w-full rounded-lg bg-slate-900 text-white py-2.5 font-medium hover:bg-slate-700">Login</button>
         </form>
 
-        <div class="mt-6 text-xs text-slate-500 space-y-1">
+        <!-- <div class="mt-6 text-xs text-slate-500 space-y-1">
             <p>Admin: admin@procurements.test / password</p>
             <p>User: user@procurements.test / password</p>
-        </div>
+        </div> -->
     </div>
 </body>
 </html>
