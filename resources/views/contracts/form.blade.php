@@ -687,8 +687,39 @@ $posByRfq = $existingPos->groupBy('rfq_id');
         ci: {{$existingCis->count()}}
     };
 
-    const contractItemsForForm = @json($existingCis->map(fn($ci) => ['id' => $ci->id, 'name' => $ci->item_name]));
-    const contractItemOptionsForForm = contractItemsForForm.map(ci => `<option value="${ci.id}">${ci.name}</option>`).join('');
+    // Dynamically build contract item options from current CI rows (supports unsaved items)
+    function buildContractItemOptions() {
+        const rows = Array.from(document.querySelectorAll('#ci-tbody tr')).filter(tr => tr.id !== 'ci-empty-msg');
+        return rows.map(tr => {
+            const idInput   = tr.querySelector('input[name$="[id]"][name*="contract_items["]');
+            const nameInput = tr.querySelector('input[name$="[item_name]"]');
+            if (!nameInput) return null;
+            const name = nameInput.value.trim();
+            if (!name) return null;
+            const dbId = idInput ? idInput.value.trim() : '';
+            if (dbId) return { value: dbId, label: name };
+            const m = nameInput.name.match(/contract_items\[(\d+)\]/);
+            if (!m) return null;
+            return { value: 'new:' + m[1], label: name };
+        }).filter(Boolean);
+    }
+
+    function buildContractItemOptionsHtml() {
+        return buildContractItemOptions().map(ci => `<option value="${ci.value}">${ci.label}</option>`).join('');
+    }
+
+    function refreshContractItemSelects() {
+        const items = buildContractItemOptions();
+        document.querySelectorAll('select[name*="[contract_item_id]"]').forEach(select => {
+            const cur = select.value;
+            while (select.options.length > 1) select.remove(1);
+            items.forEach(item => {
+                const o = new Option(item.label, item.value);
+                if (item.value === cur) o.selected = true;
+                select.add(o);
+            });
+        });
+    }
 
     function addRow(tbodyId, tplId, countersObj, key) {
         const tbody = document.getElementById(tbodyId);
@@ -703,6 +734,7 @@ $posByRfq = $existingPos->groupBy('rfq_id');
         tbody.insertAdjacentHTML('beforeend', html);
         tbody.lastElementChild?.querySelector('input')?.focus();
         if (tbodyId === 'iq-tbody') syncPoDropdowns();
+        if (tbodyId === 'ci-tbody') refreshContractItemSelects();
     }
 
     function removeSimpleRow(btn, tbodyId, emptyMsgId) {
@@ -714,6 +746,7 @@ $posByRfq = $existingPos->groupBy('rfq_id');
             if (emptyEl) emptyEl.style.display = '';
         }
         if (tbodyId === 'iq-tbody') syncPoDropdowns();
+        if (tbodyId === 'ci-tbody') refreshContractItemSelects();
     }
 
     function addSdocRowForm(btn, pi) {
@@ -788,7 +821,7 @@ $posByRfq = $existingPos->groupBy('rfq_id');
         tr.className = 'border-b border-slate-50 hover:bg-slate-50';
         tr.innerHTML = `<td class="px-3 py-1.5">
             <select class="${inp}" name="purchase_orders[${poIdx}][po_items][${rowCount}][contract_item_id]">
-                <option value="">— Pilih item —</option>${contractItemOptionsForForm}
+                <option value="">— Pilih item —</option>${buildContractItemOptionsHtml()}
             </select></td>
             <td class="px-3 py-1.5"><input class="${inp}" type="number" step="0.01" min="0" name="purchase_orders[${poIdx}][po_items][${rowCount}][qty]" placeholder="0"></td>
             <td class="px-3 py-1.5"><input class="${inp}" type="text" name="purchase_orders[${poIdx}][po_items][${rowCount}][notes]" placeholder="Catatan"></td>
@@ -874,5 +907,12 @@ $posByRfq = $existingPos->groupBy('rfq_id');
 
     // Initial sync on page load (edit mode: fills from existing IQ rows)
     syncPoDropdowns();
+
+    // Refresh CI selects when item names are typed in the Contract Items table
+    document.getElementById('ci-tbody').addEventListener('input', e => {
+        if (e.target.matches('[name$="[item_name]"]')) {
+            refreshContractItemSelects();
+        }
+    });
 </script>
 @endpush

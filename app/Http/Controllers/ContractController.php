@@ -86,6 +86,21 @@ class ContractController extends Controller
             ]);
         }
 
+        // Contract Items (must be saved before PO items so new:N refs can be resolved)
+        $ciIndexToId = [];
+        foreach ($request->input('contract_items', []) as $ciIdx => $ciItem) {
+            if (empty($ciItem['item_name'])) continue;
+            $ci = $contract->contractItems()->create([
+                'item_name'   => $ciItem['item_name'],
+                'description' => $ciItem['description'] ?? null,
+                'qty'         => ($ciItem['qty'] ?? '') !== '' ? $ciItem['qty'] : null,
+                'unit'        => $ciItem['unit'] ?? null,
+                'unit_price'  => ($ciItem['unit_price'] ?? '') !== '' ? $ciItem['unit_price'] : null,
+                'currency'    => $ciItem['currency'] ?? null,
+            ]);
+            $ciIndexToId[$ciIdx] = $ci->id;
+        }
+
         // Purchase Orders + their Maker Payment Terms
         foreach ($request->input('purchase_orders', []) as $pi => $item) {
             if (empty($item['po_number'])) continue;
@@ -128,26 +143,19 @@ class ContractController extends Controller
             }
             // PO Items
             foreach ($item['po_items'] ?? [] as $poItem) {
-                if (empty($poItem['contract_item_id'])) continue;
+                $ciIdRaw = $poItem['contract_item_id'] ?? null;
+                if (!$ciIdRaw) continue;
+                if (is_string($ciIdRaw) && str_starts_with($ciIdRaw, 'new:')) {
+                    $ciIdx   = (int) substr($ciIdRaw, 4);
+                    $ciIdRaw = $ciIndexToId[$ciIdx] ?? null;
+                }
+                if (!$ciIdRaw) continue;
                 $po->purchaseOrderItems()->create([
-                    'contract_item_id' => $poItem['contract_item_id'],
+                    'contract_item_id' => $ciIdRaw,
                     'qty'              => ($poItem['qty'] ?? '') !== '' ? $poItem['qty'] : null,
                     'notes'            => $poItem['notes'] ?? null,
                 ]);
             }
-        }
-
-        // Contract Items
-        foreach ($request->input('contract_items', []) as $ciItem) {
-            if (empty($ciItem['item_name'])) continue;
-            $contract->contractItems()->create([
-                'item_name'   => $ciItem['item_name'],
-                'description' => $ciItem['description'] ?? null,
-                'qty'         => ($ciItem['qty'] ?? '') !== '' ? $ciItem['qty'] : null,
-                'unit'        => $ciItem['unit'] ?? null,
-                'unit_price'  => ($ciItem['unit_price'] ?? '') !== '' ? $ciItem['unit_price'] : null,
-                'currency'    => $ciItem['currency'] ?? null,
-            ]);
         }
 
         // BG Numbers
@@ -296,6 +304,32 @@ class ContractController extends Controller
         }
         $contract->quotations()->whereNotIn('id', $submittedQuoIds ?: [0])->delete();
 
+        // ── Contract Items (sync, must be before PO items so new:N refs resolve) ──
+        $ciIndexToId    = [];
+        $submittedCiIds = [];
+        foreach ($request->input('contract_items', []) as $ciIdx => $ciItem) {
+            $ciId = $ciItem['id'] ?? null;
+            if (!$ciId && empty($ciItem['item_name'])) continue;
+            $ciData = [
+                'item_name'   => $ciItem['item_name'] ?? null,
+                'description' => $ciItem['description'] ?? null,
+                'qty'         => ($ciItem['qty'] ?? '') !== '' ? $ciItem['qty'] : null,
+                'unit'        => $ciItem['unit'] ?? null,
+                'unit_price'  => ($ciItem['unit_price'] ?? '') !== '' ? $ciItem['unit_price'] : null,
+                'currency'    => $ciItem['currency'] ?? null,
+            ];
+            if ($ciId) {
+                $contract->contractItems()->where('id', $ciId)->update($ciData);
+                $submittedCiIds[]      = (int) $ciId;
+                $ciIndexToId[$ciIdx]   = (int) $ciId;
+            } else {
+                $new = $contract->contractItems()->create($ciData);
+                $submittedCiIds[]      = $new->id;
+                $ciIndexToId[$ciIdx]   = $new->id;
+            }
+        }
+        $contract->contractItems()->whereNotIn('id', $submittedCiIds ?: [0])->delete();
+
         // ── Purchase Orders + Maker Payment Terms (sync) ─────────────────
         $submittedPoIds = [];
         foreach ($request->input('purchase_orders', []) as $pi => $item) {
@@ -367,9 +401,14 @@ class ContractController extends Controller
                 $submittedPoItemIds = [];
                 foreach ($item['po_items'] ?? [] as $poItem) {
                     $poItemId = $poItem['id'] ?? null;
-                    if (!$poItemId && empty($poItem['contract_item_id'])) continue;
+                    $ciIdRaw  = $poItem['contract_item_id'] ?? null;
+                    if (is_string($ciIdRaw) && str_starts_with($ciIdRaw, 'new:')) {
+                        $ciIdx   = (int) substr($ciIdRaw, 4);
+                        $ciIdRaw = $ciIndexToId[$ciIdx] ?? null;
+                    }
+                    if (!$poItemId && empty($ciIdRaw)) continue;
                     $poItemData = [
-                        'contract_item_id' => $poItem['contract_item_id'] ?? null,
+                        'contract_item_id' => $ciIdRaw,
                         'qty'              => ($poItem['qty'] ?? '') !== '' ? $poItem['qty'] : null,
                         'notes'            => $poItem['notes'] ?? null,
                     ];
@@ -425,29 +464,6 @@ class ContractController extends Controller
             }
         }
         $contract->suretyBonds()->whereNotIn('id', $submittedSbIds ?: [0])->delete();
-
-        // ── Contract Items (sync) ─────────────────────────────────────────
-        $submittedCiIds = [];
-        foreach ($request->input('contract_items', []) as $ciItem) {
-            $ciId = $ciItem['id'] ?? null;
-            if (!$ciId && empty($ciItem['item_name'])) continue;
-            $ciData = [
-                'item_name'   => $ciItem['item_name'] ?? null,
-                'description' => $ciItem['description'] ?? null,
-                'qty'         => ($ciItem['qty'] ?? '') !== '' ? $ciItem['qty'] : null,
-                'unit'        => $ciItem['unit'] ?? null,
-                'unit_price'  => ($ciItem['unit_price'] ?? '') !== '' ? $ciItem['unit_price'] : null,
-                'currency'    => $ciItem['currency'] ?? null,
-            ];
-            if ($ciId) {
-                $contract->contractItems()->where('id', $ciId)->update($ciData);
-                $submittedCiIds[] = (int) $ciId;
-            } else {
-                $new = $contract->contractItems()->create($ciData);
-                $submittedCiIds[] = $new->id;
-            }
-        }
-        $contract->contractItems()->whereNotIn('id', $submittedCiIds ?: [0])->delete();
 
         return redirect()->route('contracts.show', $contract)->with('success', 'Contract berhasil diperbarui.');
     }
