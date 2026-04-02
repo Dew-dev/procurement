@@ -172,7 +172,7 @@ $posByRfq = $existingPos->groupBy('rfq_id');
                         <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[{{ $i }}][description]" value="{{ $ci->description }}" placeholder="Deskripsi"></td>
                         <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="contract_items[{{ $i }}][qty]" value="{{ $ci->qty }}" placeholder="0"></td>
                         <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[{{ $i }}][unit]" value="{{ $ci->unit }}" placeholder="pcs, set"></td>
-                        <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="contract_items[{{ $i }}][unit_price]" value="{{ $ci->unit_price }}" placeholder="0"></td>
+                        <td class="{{ $td }}"><input class="{{ $inp }} text-right" type="text" inputmode="decimal" data-price-input name="contract_items[{{ $i }}][unit_price]" value="{{ $ci->unit_price }}" placeholder="0"></td>
                         <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[{{ $i }}][currency]" value="{{ $ci->currency }}" placeholder="USD"></td>
                         <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'ci-tbody','ci-empty-msg')" class="{{ $btnDel }}">×</button></td>
                     </tr>
@@ -190,7 +190,7 @@ $posByRfq = $existingPos->groupBy('rfq_id');
             <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[__IDX__][description]" placeholder="Deskripsi"></td>
             <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="contract_items[__IDX__][qty]" placeholder="0"></td>
             <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[__IDX__][unit]" placeholder="pcs, set"></td>
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="contract_items[__IDX__][unit_price]" placeholder="0"></td>
+            <td class="{{ $td }}"><input class="{{ $inp }} text-right" type="text" inputmode="decimal" data-price-input name="contract_items[__IDX__][unit_price]" placeholder="0"></td>
             <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[__IDX__][currency]" placeholder="USD"></td>
             <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'ci-tbody','ci-empty-msg')" class="{{ $btnDel }}">×</button></td>
         </tr>
@@ -913,6 +913,54 @@ $posByRfq = $existingPos->groupBy('rfq_id');
         if (e.target.matches('[name$="[item_name]"]')) {
             refreshContractItemSelects();
         }
+    });
+
+    // ── Unit Price Formatting ───────────────────────────────────────────────
+    function formatPrice(val) {
+        val = String(val).replace(/[^0-9.]/g, '');
+        if (!val) return '';
+        const parts = val.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return parts.length > 1 ? parts[0] + '.' + parts[1] : parts[0];
+    }
+
+    function rawPrice(val) {
+        return String(val).replace(/,/g, '');
+    }
+
+    // Show raw on focus
+    document.addEventListener('focus', e => {
+        if (e.target.matches('[data-price-input]')) {
+            e.target.value = rawPrice(e.target.value);
+        }
+    }, true);
+
+    // Format on blur
+    document.addEventListener('blur', e => {
+        if (e.target.matches('[data-price-input]')) {
+            e.target.value = formatPrice(e.target.value);
+        }
+    }, true);
+
+    // Restrict to digits + single decimal while typing
+    document.addEventListener('input', e => {
+        if (!e.target.matches('[data-price-input]')) return;
+        let v = e.target.value.replace(/[^0-9.]/g, '');
+        const di = v.indexOf('.');
+        if (di !== -1) v = v.slice(0, di + 1) + v.slice(di + 1).replace(/\./g, '');
+        e.target.value = v;
+    });
+
+    // Strip commas before submit so server receives plain numbers
+    document.querySelector('form').addEventListener('submit', () => {
+        document.querySelectorAll('[data-price-input]').forEach(inp => {
+            inp.value = rawPrice(inp.value);
+        });
+    });
+
+    // Format existing values on page load
+    document.querySelectorAll('[data-price-input]').forEach(inp => {
+        if (inp.value) inp.value = formatPrice(inp.value);
     });
 </script>
 @endpush
