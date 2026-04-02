@@ -90,12 +90,13 @@ class ContractController extends Controller
         $ciIndexToId = [];
         foreach ($request->input('contract_items', []) as $ciIdx => $ciItem) {
             if (empty($ciItem['item_name'])) continue;
+            $rawPrice = str_replace(',', '', $ciItem['unit_price'] ?? '');
             $ci = $contract->contractItems()->create([
                 'item_name'   => $ciItem['item_name'],
                 'description' => $ciItem['description'] ?? null,
                 'qty'         => ($ciItem['qty'] ?? '') !== '' ? $ciItem['qty'] : null,
                 'unit'        => $ciItem['unit'] ?? null,
-                'unit_price'  => ($ciItem['unit_price'] ?? '') !== '' ? $ciItem['unit_price'] : null,
+                'unit_price'  => $rawPrice !== '' ? $rawPrice : null,
                 'currency'    => $ciItem['currency'] ?? null,
             ]);
             $ciIndexToId[$ciIdx] = $ci->id;
@@ -310,12 +311,13 @@ class ContractController extends Controller
         foreach ($request->input('contract_items', []) as $ciIdx => $ciItem) {
             $ciId = $ciItem['id'] ?? null;
             if (!$ciId && empty($ciItem['item_name'])) continue;
+            $rawPrice = str_replace(',', '', $ciItem['unit_price'] ?? '');
             $ciData = [
                 'item_name'   => $ciItem['item_name'] ?? null,
                 'description' => $ciItem['description'] ?? null,
                 'qty'         => ($ciItem['qty'] ?? '') !== '' ? $ciItem['qty'] : null,
                 'unit'        => $ciItem['unit'] ?? null,
-                'unit_price'  => ($ciItem['unit_price'] ?? '') !== '' ? $ciItem['unit_price'] : null,
+                'unit_price'  => $rawPrice !== '' ? $rawPrice : null,
                 'currency'    => $ciItem['currency'] ?? null,
             ];
             if ($ciId) {
