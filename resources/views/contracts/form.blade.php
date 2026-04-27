@@ -157,8 +157,6 @@ $posByRfq = $existingPos->groupBy('rfq_id');
                         <th class="{{ $th }}">Deskripsi</th>
                         <th class="{{ $th }}">Qty</th>
                         <th class="{{ $th }}">Unit</th>
-                        <th class="{{ $th }}">Unit Price</th>
-                        <th class="{{ $th }}">Currency</th>
                         <th class="w-10"></th>
                     </tr>
                 </thead>
@@ -172,8 +170,6 @@ $posByRfq = $existingPos->groupBy('rfq_id');
                         <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[{{ $i }}][description]" value="{{ $ci->description }}" placeholder="Deskripsi"></td>
                         <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="contract_items[{{ $i }}][qty]" value="{{ $ci->qty }}" placeholder="0"></td>
                         <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[{{ $i }}][unit]" value="{{ $ci->unit }}" placeholder="pcs, set"></td>
-                        <td class="{{ $td }}"><input class="{{ $inp }} text-right" type="text" inputmode="decimal" data-price-input name="contract_items[{{ $i }}][unit_price]" value="{{ $ci->unit_price }}" placeholder="0"></td>
-                        <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[{{ $i }}][currency]" value="{{ $ci->currency }}" placeholder="USD"></td>
                         <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'ci-tbody','ci-empty-msg')" class="{{ $btnDel }}">×</button></td>
                     </tr>
                     @endforeach
@@ -190,8 +186,6 @@ $posByRfq = $existingPos->groupBy('rfq_id');
             <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[__IDX__][description]" placeholder="Deskripsi"></td>
             <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="contract_items[__IDX__][qty]" placeholder="0"></td>
             <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[__IDX__][unit]" placeholder="pcs, set"></td>
-            <td class="{{ $td }}"><input class="{{ $inp }} text-right" type="text" inputmode="decimal" data-price-input name="contract_items[__IDX__][unit_price]" placeholder="0"></td>
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="contract_items[__IDX__][currency]" placeholder="USD"></td>
             <td class="{{ $td }}"><button type="button" onclick="removeSimpleRow(this,'ci-tbody','ci-empty-msg')" class="{{ $btnDel }}">×</button></td>
         </tr>
     </template>

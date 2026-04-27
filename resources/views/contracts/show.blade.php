@@ -152,8 +152,6 @@
                         <th class="{{ $th }}">Deskripsi</th>
                         <th class="{{ $th }}">Qty</th>
                         <th class="{{ $th }}">Unit</th>
-                        <th class="{{ $th }}">Unit Price</th>
-                        <th class="{{ $th }}">Currency</th>
                         <th class="px-3 py-2 w-8"></th>
                     </tr>
                 </thead>
@@ -164,8 +162,6 @@
                     <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][description]" value="{{ $ci->description }}" placeholder="Deskripsi"></td>
                     <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="items[{{ $i }}][qty]" value="{{ $ci->qty }}" placeholder="0"></td>
                     <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][unit]" value="{{ $ci->unit }}" placeholder="pcs, set, unit"></td>
-                    <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="items[{{ $i }}][unit_price]" value="{{ $ci->unit_price }}" placeholder="0"></td>
-                    <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[{{ $i }}][currency]" value="{{ $ci->currency }}" placeholder="USD"></td>
                     <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
                 </tr>
                 @endforeach
@@ -184,8 +180,6 @@
             <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][description]" placeholder="Deskripsi"></td>
             <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="items[__IDX__][qty]" placeholder="0"></td>
             <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][unit]" placeholder="pcs, set, unit"></td>
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="number" step="0.01" min="0" name="items[__IDX__][unit_price]" placeholder="0"></td>
-            <td class="{{ $td }}"><input class="{{ $inp }}" type="text" name="items[__IDX__][currency]" placeholder="USD"></td>
             <td class="{{ $td }}"><button type="button" onclick="removeRow(this)" class="{{ $btnDel }}" title="Hapus">-</button></td>
         </tr>
     </template>
@@ -194,13 +188,13 @@
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="border-b border-slate-100"><tr>
-                <th class="{{ $th }}">Nama Item</th><th class="{{ $th }}">Deskripsi</th><th class="{{ $th }}">Qty</th><th class="{{ $th }}">Unit</th><th class="{{ $th }}">Unit Price</th><th class="{{ $th }}">Currency</th>
+                <th class="{{ $th }}">Nama Item</th><th class="{{ $th }}">Deskripsi</th><th class="{{ $th }}">Qty</th><th class="{{ $th }}">Unit</th>
             </tr></thead>
             <tbody>
             @forelse($contract->contractItems as $ci)
-            <tr class="border-b border-slate-50"><td class="{{ $td }}">{{ $ci->item_name }}</td><td class="{{ $td }}">{{ $ci->description ?: '' }}</td><td class="{{ $td }}">{{ $ci->qty !== null ? $ci->qty : '' }}</td><td class="{{ $td }}">{{ $ci->unit ?: '' }}</td><td class="{{ $td }}">{{ $ci->unit_price !== null ? number_format($ci->unit_price, 2) : '' }}</td><td class="{{ $td }}">{{ $ci->currency ?: '' }}</td></tr>
+            <tr class="border-b border-slate-50"><td class="{{ $td }}">{{ $ci->item_name }}</td><td class="{{ $td }}">{{ $ci->description ?: '' }}</td><td class="{{ $td }}">{{ $ci->qty !== null ? $ci->qty : '' }}</td><td class="{{ $td }}">{{ $ci->unit ?: '' }}</td></tr>
             @empty
-            <tr><td colspan="6" class="px-4 py-4 text-center text-slate-400 text-sm">Belum ada data</td></tr>
+            <tr><td colspan="4" class="px-4 py-4 text-center text-slate-400 text-sm">Belum ada data</td></tr>
             @endforelse
             </tbody>
         </table>
