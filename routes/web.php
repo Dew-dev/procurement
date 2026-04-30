@@ -44,5 +44,7 @@ Route::middleware('auth')->group(function () {
 
     // --- Read-only routes (all authenticated users) ---
     Route::get('contracts', [ContractController::class, 'index'])->name('contracts.index');
+    Route::get('contracts/export/excel', [ContractController::class, 'export'])->name('contracts.export');
+    Route::get('contracts/export/unpaid-po', [ContractController::class, 'exportUnpaidPo'])->name('contracts.export.unpaid-po');
     Route::get('contracts/{contract}', [ContractController::class, 'show'])->name('contracts.show');
 });

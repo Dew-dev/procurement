@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ContractsExport;
+use App\Exports\UnpaidPoExport;
 use App\Models\Contract;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -475,5 +477,15 @@ class ContractController extends Controller
         $contract->delete();
 
         return redirect()->route('contracts.index')->with('success', 'Contract berhasil dihapus.');
+    }
+
+    public function export()
+    {
+        return (new ContractsExport())->download();
+    }
+
+    public function exportUnpaidPo()
+    {
+        return (new UnpaidPoExport())->download();
     }
 }

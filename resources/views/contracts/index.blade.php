@@ -5,9 +5,15 @@
 @section('content')
     <div class="flex items-center justify-between mb-5">
         <h1 class="text-2xl font-semibold">Contracts</h1>
-        @if (auth()->user()->role === 'admin')
-            <a href="{{ route('contracts.create') }}" class="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm hover:bg-slate-700">Tambah Contract</a>
-        @endif
+        <div class="flex items-center gap-2">
+            <a href="{{ route('contracts.export') }}"
+               class="px-4 py-2 rounded-lg bg-emerald-700 text-white text-sm hover:bg-emerald-600">Export Excel</a>
+            <a href="{{ route('contracts.export.unpaid-po') }}"
+               class="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm hover:bg-amber-500">Export PO Belum Lunas</a>
+            @if (auth()->user()->role === 'admin')
+                <a href="{{ route('contracts.create') }}" class="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm hover:bg-slate-700">Tambah Contract</a>
+            @endif
+        </div>
     </div>
 
     {{-- Search --}}
