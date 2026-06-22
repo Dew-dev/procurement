@@ -19,8 +19,9 @@
     <header class="bg-white border-b border-slate-200 sticky top-0 z-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center gap-6">
-                <a href="{{ route('contracts.index') }}" class="font-semibold text-lg">Procurements</a>
+                <a href="{{ route('dashboard') }}" class="font-semibold text-lg">Procurements</a>
                 <nav class="hidden md:flex items-center gap-4 text-sm text-slate-600">
+                    <a class="hover:text-slate-900 {{ request()->routeIs('dashboard') ? 'text-slate-900 font-medium' : '' }}" href="{{ route('dashboard') }}">Dashboard</a>
                     <a class="hover:text-slate-900 {{ request()->routeIs('contracts.*') ? 'text-slate-900 font-medium' : '' }}" href="{{ route('contracts.index') }}">Contracts</a>
                 </nav>
             </div>
