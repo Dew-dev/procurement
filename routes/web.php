@@ -5,6 +5,7 @@ use App\Http\Controllers\BgNumberController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\ContractItemController;
 use App\Http\Controllers\ContractPaymentTermController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MakerPaymentTermController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\QuotationController;
@@ -19,7 +20,8 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/', fn () => redirect()->route('contracts.index'))->name('home');
+    Route::get('/', fn () => redirect()->route('dashboard'))->name('home');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
     // --- Admin-only write routes (registered FIRST to avoid slug collisions) ---
