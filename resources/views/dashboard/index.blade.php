@@ -119,22 +119,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Total PO belum rilis -->
-        <div class="bg-white border border-slate-200 rounded-xl p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-slate-600 text-sm font-medium">Total PO belum rilis</p>
-                    <p class="text-3xl font-bold text-slate-900 mt-2">{{ $totalItemsWithoutPo }}</p>
-                    <p class="text-md text-slate-500 mt-1">Dari item kontrak yang belum ada PO</p>
-                </div>
-                <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center">
-                    <svg class="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4v.01M3 12a9 9 0 1118 0 9 9 0 01-18 0z"></path>
-                    </svg>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Charts Row -->
