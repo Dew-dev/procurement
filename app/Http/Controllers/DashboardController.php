@@ -24,6 +24,13 @@ class DashboardController extends Controller
             ->whereNotNull('purchase_orders.delivered_date')
             ->sum('purchase_order_items.qty');
 
+        $totalItemsWithoutPo = max(0, $totalContractItems - $totalPoItems);
+        $totalItemsUnarrived = max(0, $totalPoItems - $totalDeliveredItems);
+        $totalItemsWithPoPercent = $totalContractItems ? round(($totalPoItems / $totalContractItems) * 100, 1) : 0;
+        $totalItemsWithoutPoPercent = $totalContractItems ? round(($totalItemsWithoutPo / $totalContractItems) * 100, 1) : 0;
+        $totalItemsUnarrivedPercentOfPo = $totalPoItems ? round(($totalItemsUnarrived / $totalPoItems) * 100, 1) : 0;
+        $totalDeliveredItemsPercentOfPo = $totalPoItems ? round(($totalDeliveredItems / $totalPoItems) * 100, 1) : 0;
+
         // Average WIP progress - get latest percentage for each PO
         $avgProgress = PurchaseOrder::join('purchase_order_wip_statuses as w', 'purchase_orders.id', '=', 'w.purchase_order_id')
             ->whereIn('w.id', function ($query) {
@@ -252,6 +259,12 @@ class DashboardController extends Controller
             'totalContractItems',
             'totalPoItems',
             'totalDeliveredItems',
+            'totalItemsWithoutPo',
+            'totalItemsUnarrived',
+            'totalItemsWithoutPoPercent',
+            'totalItemsWithPoPercent',
+            'totalItemsUnarrivedPercentOfPo',
+            'totalDeliveredItemsPercentOfPo',
             'avgProgress',
             'deliveredByContract',
             'contractProgress',
