@@ -131,6 +131,63 @@ class DashboardController extends Controller
                 ->sum('purchase_order_items.qty'),
         ];
 
+        // Contract status breakdown (based on contract delivery state)
+        $contractIdsAtRisk = DB::table('purchase_orders')
+            ->whereNull('delivered_date')
+            ->where(DB::raw('DATE(exact_delivery_date)'), '<', DB::raw('CURDATE()'))
+            ->distinct()
+            ->pluck('contract_id')
+            ->toArray();
+
+        $contractIdsDelivered = DB::table('purchase_orders')
+            ->select('contract_id')
+            ->groupBy('contract_id')
+            ->havingRaw('SUM(CASE WHEN delivered_date IS NULL THEN 1 ELSE 0 END) = 0')
+            ->pluck('contract_id')
+            ->toArray();
+
+        $contractIdsOnTrack = DB::table('purchase_orders')
+            ->whereNull('delivered_date')
+            ->where(DB::raw('DATE(exact_delivery_date)'), '>=', DB::raw('CURDATE()'))
+            ->distinct()
+            ->pluck('contract_id')
+            ->toArray();
+
+        $contractIdsOnTrack = array_values(array_diff($contractIdsOnTrack, $contractIdsAtRisk, $contractIdsDelivered));
+
+        $contractStatus = [
+            'delivered_count' => count($contractIdsDelivered),
+            'at_risk_count' => count($contractIdsAtRisk),
+            'on_track_count' => count($contractIdsOnTrack),
+            'delivered_contracts' => Contract::whereIn('id', $contractIdsDelivered)->limit(5)->get(['contract_number', 'buyer_name']),
+            'at_risk_contracts' => Contract::whereIn('id', $contractIdsAtRisk)->limit(5)->get(['contract_number', 'buyer_name']),
+            'on_track_contracts' => Contract::whereIn('id', $contractIdsOnTrack)->limit(5)->get(['contract_number', 'buyer_name']),
+        ];
+
+        $contractStatusTable = DB::table('contracts')
+            ->join('purchase_orders', 'contracts.id', '=', 'purchase_orders.contract_id')
+            ->select('contracts.id', 'contracts.contract_number', 'contracts.buyer_name')
+            ->selectRaw('MAX(purchase_orders.exact_delivery_date) as target_delivery_date')
+            ->selectRaw('SUM(CASE WHEN purchase_orders.delivered_date IS NULL THEN 1 ELSE 0 END) as undelivered_count')
+            ->selectRaw('SUM(CASE WHEN purchase_orders.delivered_date IS NULL AND DATE(purchase_orders.exact_delivery_date) < CURDATE() THEN 1 ELSE 0 END) as overdue_count')
+            ->selectRaw('COUNT(purchase_orders.id) as total_pos')
+            ->selectRaw("CASE
+                WHEN SUM(CASE WHEN purchase_orders.delivered_date IS NULL THEN 1 ELSE 0 END) = 0 THEN 'Delivered'
+                WHEN SUM(CASE WHEN purchase_orders.delivered_date IS NULL AND DATE(purchase_orders.exact_delivery_date) < CURDATE() THEN 1 ELSE 0 END) > 0 THEN 'At Risk'
+                ELSE 'On Track'
+            END as status")
+            ->selectRaw('DATEDIFF(MAX(purchase_orders.exact_delivery_date), CURDATE()) as day_delta')
+            ->groupBy('contracts.id', 'contracts.contract_number', 'contracts.buyer_name')
+            ->orderByRaw("FIELD(
+                CASE
+                    WHEN SUM(CASE WHEN purchase_orders.delivered_date IS NULL THEN 1 ELSE 0 END) = 0 THEN 'Delivered'
+                    WHEN SUM(CASE WHEN purchase_orders.delivered_date IS NULL AND DATE(purchase_orders.exact_delivery_date) < CURDATE() THEN 1 ELSE 0 END) > 0 THEN 'At Risk'
+                    ELSE 'On Track'
+                END,
+                'At Risk', 'On Track', 'Delivered'
+            )")
+            ->paginate(15);
+
         // Progress distribution - using subquery for latest WIP status
         $progressBuckets = [
             '0-20%' => PurchaseOrderWipStatus::whereIn('id', function ($query) {
@@ -201,6 +258,8 @@ class DashboardController extends Controller
             'highProgress',
             'lowProgress',
             'deliveryStatus',
+            'contractStatus',
+            'contractStatusTable',
             'progressBuckets',
             'topPosByProgress',
             'contracts'

@@ -7,7 +7,23 @@
         <h1 class="text-3xl font-bold text-slate-900">Dashboard</h1>
         <p class="text-slate-500 mt-1">Ringkasan kontrak dan progress pengerjaan</p>
     </div>
-
+    <!-- PO Released Card -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-4 mb-8">
+        <div class="bg-white border border-slate-200 rounded-xl p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-slate-600 text-sm font-medium">PO yang sudah dirilis</p>
+                    <p class="text-3xl font-bold text-slate-900 mt-2">{{ $totalPurchaseOrders }}</p>
+                    <p class="text-xs text-slate-500 mt-1">Jumlah PO terbit di semua kontrak</p>
+                </div>
+                <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
+                    <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Key Metrics Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <!-- Total Contracts -->
@@ -31,6 +47,7 @@
                 <div>
                     <p class="text-slate-600 text-sm font-medium">Total Item yang sudah PO</p>
                     <p class="text-3xl font-bold text-slate-900 mt-2">{{ $totalPoItems }}</p>
+                    <p class="text-xs text-slate-500 mt-1">Dari {{ $totalContractItems }} total item kontrak</p>
                 </div>
                 <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                     <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -229,6 +246,62 @@
                 </svg>
             </div>
         </div>
+    </div>
+
+    <!-- Contract Status Table -->
+    <div class="bg-white border border-slate-200 rounded-xl p-6 mb-8">
+        <h2 class="text-lg font-semibold text-slate-900 mb-4">Status Pengiriman Kontrak</h2>
+        @if($contractStatusTable->count() > 0)
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-200">
+                            <th class="text-left px-4 py-3 text-slate-600 font-medium">No Kontrak</th>
+                            <th class="text-left px-4 py-3 text-slate-600 font-medium">Buyer</th>
+                            <th class="text-center px-4 py-3 text-slate-600 font-medium">Status</th>
+                            <th class="text-center px-4 py-3 text-slate-600 font-medium">Target Delivery</th>
+                            <th class="text-right px-4 py-3 text-slate-600 font-medium">Delta Hari</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($contractStatusTable as $contract)
+                            <tr class="border-b border-slate-100 hover:bg-slate-50">
+                                <td class="px-4 py-3 font-medium text-slate-900">{{ $contract->contract_number }}</td>
+                                <td class="px-4 py-3 text-slate-600">{{ $contract->buyer_name }}</td>
+                                <td class="px-4 py-3 text-center">
+                                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold {{ $contract->status === 'Delivered' ? 'bg-emerald-100 text-emerald-700' : ($contract->status === 'At Risk' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700') }}">
+                                        {{ $contract->status }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-center text-slate-600">
+                                    @if($contract->target_delivery_date)
+                                        {{ \Carbon\Carbon::parse($contract->target_delivery_date)->format('d M Y') }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 text-right text-slate-900 font-medium">
+                                    @if($contract->day_delta > 0)
+                                        +{{ $contract->day_delta }} hari
+                                    @elseif($contract->day_delta < 0)
+                                        {{ $contract->day_delta }} hari
+                                    @else
+                                        Hari ini
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-4">
+                {{ $contractStatusTable->links() }}
+            </div>
+        @else
+            <div class="py-8 text-center text-slate-500">
+                <p class="text-sm">Belum ada data status kontrak</p>
+            </div>
+        @endif
     </div>
 
     <!-- Contract Progress Overview -->
