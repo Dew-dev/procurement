@@ -7,26 +7,9 @@
         <h1 class="text-3xl font-bold text-slate-900">Dashboard</h1>
         <p class="text-slate-500 mt-1">Ringkasan kontrak dan progress pengerjaan</p>
     </div>
-    <!-- PO Released Card -->
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-4 mb-8">
-        <div class="bg-white border border-slate-200 rounded-xl p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-slate-600 text-sm font-medium">PO yang sudah dirilis</p>
-                    <p class="text-3xl font-bold text-slate-900 mt-2">{{ $totalPurchaseOrders }}</p>
-                    <p class="text-xs text-slate-500 mt-1">Jumlah PO terbit di semua kontrak</p>
-                </div>
-                <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
-                    <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"></path>
-                    </svg>
-                </div>
-            </div>
-        </div>
-    </div>
     <!-- Key Metrics Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <!-- Total Contracts -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <!-- Total Kontrak -->
         <div class="bg-white border border-slate-200 rounded-xl p-6">
             <div class="flex items-center justify-between">
                 <div>
@@ -41,13 +24,45 @@
             </div>
         </div>
 
+        <!-- Total PO rilis -->
+        <div class="bg-white border border-slate-200 rounded-xl p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-slate-600 text-sm font-medium">PO yang sudah dirilis</p>
+                    <p class="text-3xl font-bold text-slate-900 mt-2">{{ $totalPurchaseOrders }}</p>
+                    <p class="text-md text-slate-500 mt-1">Jumlah PO terbit di semua kontrak</p>
+                </div>
+                <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
+                    <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Item Semua Kontrak -->
+        <div class="bg-white border border-slate-200 rounded-xl p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-slate-600 text-sm font-medium">Total Item Semua Kontrak</p>
+                    <p class="text-3xl font-bold text-slate-900 mt-2">{{ $totalContractItems }}</p>
+                    <p class="text-md text-slate-500 mt-1">Jumlah total kuantitas item pada semua kontrak</p>
+                </div>
+                <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
+                    <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
         <!-- Total Item yang sudah PO -->
         <div class="bg-white border border-slate-200 rounded-xl p-6">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-slate-600 text-sm font-medium">Total Item yang sudah PO</p>
                     <p class="text-3xl font-bold text-slate-900 mt-2">{{ $totalPoItems }}</p>
-                    <p class="text-xs text-slate-500 mt-1">Dari {{ $totalContractItems }} total item kontrak</p>
+                    <p class="text-md text-slate-500 mt-1">{{ $totalItemsWithPoPercent }}% dari total item kontrak</p>
                 </div>
                 <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                     <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -57,13 +72,45 @@
             </div>
         </div>
 
-        <!-- Delivered Items -->
+        <!-- Total Item belum PO -->
         <div class="bg-white border border-slate-200 rounded-xl p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-slate-600 text-sm font-medium">Sudah Terkirim (item)</p>
+                    <p class="text-slate-600 text-sm font-medium">Total Item belum PO</p>
+                    <p class="text-3xl font-bold text-slate-900 mt-2">{{ $totalItemsWithoutPo }}</p>
+                    <p class="text-md text-slate-500 mt-1">{{ $totalItemsWithoutPoPercent }}% dari total item kontrak</p>
+                </div>
+                <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                    <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4v.01M3 12a9 9 0 1118 0 9 9 0 01-18 0z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Item belum sampai PT PAL -->
+        <div class="bg-white border border-slate-200 rounded-xl p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-slate-600 text-sm font-medium">Total Item belum sampai PT PAL</p>
+                    <p class="text-3xl font-bold text-slate-900 mt-2">{{ $totalItemsUnarrived }}</p>
+                    <p class="text-md text-slate-500 mt-1">{{ $totalItemsUnarrivedPercentOfPo }}% dari item yang sudah PO</p>
+                </div>
+                <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12h18M12 3v18"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Item sudah sampai PT PAL -->
+        <div class="bg-white border border-slate-200 rounded-xl p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-slate-600 text-sm font-medium">Total Item sudah sampai PT PAL</p>
                     <p class="text-3xl font-bold text-emerald-600 mt-2">{{ $totalDeliveredItems }}</p>
-                    <p class="text-xs text-slate-500 mt-1">{{ $totalContractItems ? round(($totalDeliveredItems / $totalContractItems) * 100, 1) : 0 }}% dari total item kontrak</p>
+                    <p class="text-md text-slate-500 mt-1">{{ $totalDeliveredItemsPercentOfPo }}% dari item yang sudah PO</p>
                 </div>
                 <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
                     <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -73,15 +120,18 @@
             </div>
         </div>
 
-        <!-- Average Progress -->
+        <!-- Total PO belum rilis -->
         <div class="bg-white border border-slate-200 rounded-xl p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-slate-600 text-sm font-medium">Rata-rata Progress</p>
-                    <p class="text-3xl font-bold text-amber-600 mt-2">{{ round($avgProgress, 1) }}%</p>
-                    <div class="w-full bg-slate-200 rounded-full h-2 mt-2">
-                        <div class="bg-amber-500 h-2 rounded-full" style="width: {{ $avgProgress }}%"></div>
-                    </div>
+                    <p class="text-slate-600 text-sm font-medium">Total PO belum rilis</p>
+                    <p class="text-3xl font-bold text-slate-900 mt-2">{{ $totalItemsWithoutPo }}</p>
+                    <p class="text-md text-slate-500 mt-1">Dari item kontrak yang belum ada PO</p>
+                </div>
+                <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center">
+                    <svg class="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4v.01M3 12a9 9 0 1118 0 9 9 0 01-18 0z"></path>
+                    </svg>
                 </div>
             </div>
         </div>
